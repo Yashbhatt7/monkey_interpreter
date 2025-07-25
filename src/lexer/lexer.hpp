@@ -1,11 +1,33 @@
 #pragma once
 #include<string>
+#include<../token/token.hpp>
 
-struct Lexer {
+class Lexer {
+private:
     std::string input;
-    int positoin = 0;
-    int readPosition = 0;
+    size_t position = 0;
+    size_t readPosition = 0;
     char ch = 0;
+
+public:
+    Lexer New(std::string input) {
+        return Lexer(std::move(input));
+    }
+
+    void readChar() {
+    }
+
+    Lexer(std::string input)
+        : input(std::move(input)) {
+        readChar();
+    }
+
+    Token NextToken() {
+        Token tok;
+
+        return tok;
+    }
+
 };
 
 
