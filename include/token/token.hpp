@@ -1,3 +1,7 @@
+// include/token/token.hpp
+#ifndef TOKEN_HPP
+#define TOKEN_HPP
+
 #include<iostream>
 #include<unordered_map>
 
@@ -97,3 +101,5 @@ public:
         return TokenType::Ident;
     }
 };
+
+#endif // TOKEN_HPP

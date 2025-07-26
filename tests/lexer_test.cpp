@@ -1,6 +1,6 @@
-#include "lexer.hpp"
-#include "../token/token.hpp"
 #include<gtest/gtest.h>
+#include "../include/lexer.hpp"
+#include "../include/token/token.hpp"
 
 TEST(LexerTest, NextTokenFullTest) {
     // std::string input = R"(
@@ -59,6 +59,3 @@ TEST(LexerTest, NextTokenFullTest) {
             << tests[i].expectedLiteral << "', got: '" << tok.literal << "'";
     }
 }
-
-
-
