@@ -1,0 +1,21 @@
+# Ignore everything
+*
+
+# Allow source files
+!*.cpp
+!*.hpp
+!*.h
+
+# Allow directories
+!*/
+
+# Allow build system files
+!CMakeLists.txt
+!Makefile
+
+# Allow documentation
+!*.md
+!*.txt
+
+# Allow .gitignore itself
+!.gitignore
