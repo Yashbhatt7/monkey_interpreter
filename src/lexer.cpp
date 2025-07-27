@@ -6,9 +6,33 @@ Lexer::Lexer(const std::string& input)
     readChar();
 }
 
-// Token Lexer::NextToken() {
-//
-// }
+Token Lexer::NextToken() {
+    Token tok;
+
+    switch (ch) {
+        case '=':
+            tok = newToken(TokenType::Assign, ch); break;
+        case '+':
+            tok = newToken(TokenType::Plus, ch); break;
+        case ';':
+            tok = newToken(TokenType::Semicolon, ch); break;
+        case '(':
+            tok = newToken(TokenType::LParen, ch); break;
+        case ')':
+            tok = newToken(TokenType::RParen, ch); break;
+        case '{':
+            tok = newToken(TokenType::LSquarly, ch); break;
+        case '}':
+            tok = newToken(TokenType::RSquarly, ch); break;
+        case ',':
+            tok = newToken(TokenType::Comma, ch); break;
+        case 0:
+            tok = Token{TokenType::Eof, ""}; break;
+    }
+
+    readChar();
+    return tok;
+}
 
 
 
