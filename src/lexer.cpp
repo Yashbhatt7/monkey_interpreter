@@ -8,33 +8,84 @@ Lexer::Lexer(const std::string& input)
 
 Token Lexer::NextToken() {
     Token tok;
+    skipWhitespace();
 
     switch (ch) {
-        case '=':
+
+        case '=': {
+            std::string s = TokenTypeMap::tokenTypeToString(TokenType::Assign);
+            std::cout << "s: " << s << "\n";
             tok = newToken(TokenType::Assign, ch); break;
-        case '+':
+        }
+        case '+': {
+            std::string s = TokenTypeMap::tokenTypeToString(TokenType::Plus);
+            std::cout << "s: " << s << "\n";
             tok = newToken(TokenType::Plus, ch); break;
-        case ';':
+        }
+        case ';': {
+            std::string s = TokenTypeMap::tokenTypeToString(TokenType::Semicolon);
+            std::cout << "s: " << s << "\n";
             tok = newToken(TokenType::Semicolon, ch); break;
-        case '(':
+        }
+        case '(': {
+            std::string s = TokenTypeMap::tokenTypeToString(TokenType::LParen);
+            std::cout << "s: " << s << "\n";
             tok = newToken(TokenType::LParen, ch); break;
-        case ')':
+        }
+        case ')': {
+            std::string s = TokenTypeMap::tokenTypeToString(TokenType::RParen);
+            std::cout << "s: " << s << "\n";
             tok = newToken(TokenType::RParen, ch); break;
-        case '{':
+        }
+        case '{': {
+            std::string s = TokenTypeMap::tokenTypeToString(TokenType::LSquarly);
+            std::cout << "s: " << s << "\n";
             tok = newToken(TokenType::LSquarly, ch); break;
-        case '}':
+        }
+        case '}': {
+            std::string s = TokenTypeMap::tokenTypeToString(TokenType::RSquarly);
+            std::cout << "s: " << s << "\n";
             tok = newToken(TokenType::RSquarly, ch); break;
-        case ',':
+        }
+        case ',': {
+            std::string s = TokenTypeMap::tokenTypeToString(TokenType::Comma);
+            std::cout << "s: " << s << "\n";
             tok = newToken(TokenType::Comma, ch); break;
-        case 0:
+        }
+        case 0: {
+            std::string s = TokenTypeMap::tokenTypeToString(TokenType::Eof);
+            std::cout << "s: " << s << "\n";
             tok = Token{TokenType::Eof, ""}; break;
+        }
+        default: {
+            if (isLetter(ch)) {
+                tok.literal = readIdentifier();
+                std::cout << "literal: " << tok.literal << "\n";
+                tok.type = TokenTypeMap::lookupIdent(tok.literal);
+                std::cout << "type is: ";
+                std::cout << TokenTypeMap::tokenTypeToString(tok.type) << "\n\n";
+                return tok;
+            } else if (isDigit(ch)) {
+                tok.literal = readNumber();
+                std::cout << "literal: " << tok.literal << "\n";
+                tok.type = TokenType::Int;
+                std::cout << "type is: ";
+                std::cout << TokenTypeMap::tokenTypeToString(tok.type) << "\n\n";
+                return tok;
+            } else {
+                std::cout << "Illegal...\n";
+                tok = newToken(TokenType::Illegal, ch);
+            }
+        }
     }
 
     readChar();
     return tok;
 }
 
-
+Token Lexer::newToken(TokenType type, char ch) const {
+    return Token{type, std::string(1, ch)};
+}
 
 // Helper methods
 void Lexer::readChar() {
@@ -79,6 +130,3 @@ bool Lexer::isDigit(char ch) const {
     return ch >= '0' && ch <= '9';
 }
 
-Token Lexer::newToken(TokenType type, char ch) const {
-    return Token{type, std::string(1, ch)};
-}
