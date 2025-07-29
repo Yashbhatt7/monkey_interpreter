@@ -59,6 +59,9 @@ TEST(LexerTest, NextTokenFullTest) {
         } else {
             return false;
         }
+
+        10 == 10;
+        10 != 9;
     )";
 
 
@@ -142,6 +145,16 @@ TEST(LexerTest, NextTokenFullTest) {
         {TokenType::False, "false"},
         {TokenType::Semicolon, ";"},
         {TokenType::RSquarly, "}"},
+        // 10 == 10;
+        // 10 != 9;
+        {TokenType::Int, "10"},
+        {TokenType::Eq, "=="},
+        {TokenType::Int, "10"},
+        {TokenType::Semicolon, ";"},
+        {TokenType::Int, "10"},
+        {TokenType::NotEq, "!="},
+        {TokenType::Int, "9"},
+        {TokenType::Semicolon, ";"},
         {TokenType::Eof, ""},
     };
 
