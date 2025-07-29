@@ -6,71 +6,71 @@ Lexer::Lexer(const std::string& input)
     readChar();
 }
 
+// std::string s = TokenTypeMap::tokenTypeToString(TokenType::Assign);
+// std::cout << "s: " << s << "\n";
+
 Token Lexer::NextToken() {
     Token tok;
+    // std::cout << "our dear ch: " << ch << "\n\n";
     skipWhitespace();
 
     switch (ch) {
-
         case '=': {
-            std::string s = TokenTypeMap::tokenTypeToString(TokenType::Assign);
-            std::cout << "s: " << s << "\n";
-            tok = newToken(TokenType::Assign, ch); break;
+            if (peekChar() == '=') {
+                char ch = this->ch;
+                readChar();
+                std::string literal = std::string(1, ch) + std::string(1, this->ch);
+                tok = Token{TokenType::Eq, literal};
+            } else {
+                tok = newToken(TokenType::Assign, ch);
+            }
         }
-        case '+': {
-            std::string s = TokenTypeMap::tokenTypeToString(TokenType::Plus);
-            std::cout << "s: " << s << "\n";
+            break;
+        case '!': {
+            if(peekChar() == '=') {
+                char ch = this->ch;
+                readChar();
+                std::string literal = std::string(1, ch) + std::string(1, this->ch);
+                tok = Token{TokenType::NotEq, literal};
+            } else {
+                tok = newToken(TokenType::Bang, ch);
+            }
+        }
+            break;
+        case '+':
             tok = newToken(TokenType::Plus, ch); break;
-        }
-        case ';': {
-            std::string s = TokenTypeMap::tokenTypeToString(TokenType::Semicolon);
-            std::cout << "s: " << s << "\n";
+        case '-':
+            tok = newToken(TokenType::Minus, ch); break;
+        case '/':
+            tok = newToken(TokenType::Slash, ch); break;
+        case '*':
+            tok = newToken(TokenType::Asterisk, ch); break;
+        case '<':
+            tok = newToken(TokenType::Lt, ch); break;
+        case '>':
+            tok = newToken(TokenType::Gt, ch); break;
+        case ';':
             tok = newToken(TokenType::Semicolon, ch); break;
-        }
-        case '(': {
-            std::string s = TokenTypeMap::tokenTypeToString(TokenType::LParen);
-            std::cout << "s: " << s << "\n";
+        case '(':
             tok = newToken(TokenType::LParen, ch); break;
-        }
-        case ')': {
-            std::string s = TokenTypeMap::tokenTypeToString(TokenType::RParen);
-            std::cout << "s: " << s << "\n";
+        case ')':
             tok = newToken(TokenType::RParen, ch); break;
-        }
-        case '{': {
-            std::string s = TokenTypeMap::tokenTypeToString(TokenType::LSquarly);
-            std::cout << "s: " << s << "\n";
+        case '{':
             tok = newToken(TokenType::LSquarly, ch); break;
-        }
-        case '}': {
-            std::string s = TokenTypeMap::tokenTypeToString(TokenType::RSquarly);
-            std::cout << "s: " << s << "\n";
+        case '}':
             tok = newToken(TokenType::RSquarly, ch); break;
-        }
-        case ',': {
-            std::string s = TokenTypeMap::tokenTypeToString(TokenType::Comma);
-            std::cout << "s: " << s << "\n";
+        case ',':
             tok = newToken(TokenType::Comma, ch); break;
-        }
-        case 0: {
-            std::string s = TokenTypeMap::tokenTypeToString(TokenType::Eof);
-            std::cout << "s: " << s << "\n";
+        case 0:
             tok = Token{TokenType::Eof, ""}; break;
-        }
         default: {
             if (isLetter(ch)) {
                 tok.literal = readIdentifier();
-                std::cout << "literal: " << tok.literal << "\n";
                 tok.type = TokenTypeMap::lookupIdent(tok.literal);
-                std::cout << "type is: ";
-                std::cout << TokenTypeMap::tokenTypeToString(tok.type) << "\n\n";
                 return tok;
             } else if (isDigit(ch)) {
                 tok.literal = readNumber();
-                std::cout << "literal: " << tok.literal << "\n";
                 tok.type = TokenType::Int;
-                std::cout << "type is: ";
-                std::cout << TokenTypeMap::tokenTypeToString(tok.type) << "\n\n";
                 return tok;
             } else {
                 std::cout << "Illegal...\n";
