@@ -29,6 +29,18 @@ TEST(LexerTest, NextTokenFullTest) {
     // std::string input  = "=+(){},;";
 
 
+    // std::string input = R"(
+    //     let five = 5;
+    //     let ten = 10;
+    //
+    //     let add = fn(x, y) {
+    //         x + y;
+    //     };
+    //
+    //     let result = add(five, ten);
+    // )";
+
+
     std::string input = R"(
         let five = 5;
         let ten = 10;
@@ -38,6 +50,9 @@ TEST(LexerTest, NextTokenFullTest) {
         };
 
         let result = add(five, ten);
+
+        !-/*5;
+        5 < 10 > 5;
     )";
 
 
@@ -85,17 +100,21 @@ TEST(LexerTest, NextTokenFullTest) {
         {TokenType::Ident, "ten"},
         {TokenType::RParen, ")"},
         {TokenType::Semicolon, ";"},
+        // !-/*5;
+        // 5 < 10 > 5;
+        {TokenType::Bang, "!"},
+        {TokenType::Minus, "-"},
+        {TokenType::Slash, "/"},
+        {TokenType::Asterisk, "*"},
+        {TokenType::Int, "5"},
+        {TokenType::Semicolon, ";"},
+        {TokenType::Int, "5"},
+        {TokenType::Lt, "<"},
+        {TokenType::Int, "10"},
+        {TokenType::Gt, ">"},
+        {TokenType::Int, "5"},
+        {TokenType::Semicolon, ";"},
         {TokenType::Eof, ""},
-
-        // {TokenType::Assign, "="},
-        // {TokenType::Plus, "+"},
-        // {TokenType::LParen, "("},
-        // {TokenType::RParen, ")"},
-        // {TokenType::LSquarly, "{"},
-        // {TokenType::RSquarly, "}"},
-        // {TokenType::Comma, ","},
-        // {TokenType::Semicolon, ";"},
-        // {TokenType::Eof, ""},
     };
 
     for(size_t i = 0; i < tests.size(); ++i) {
