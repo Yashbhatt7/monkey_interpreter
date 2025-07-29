@@ -53,6 +53,12 @@ TEST(LexerTest, NextTokenFullTest) {
 
         !-/*5;
         5 < 10 > 5;
+
+        if (5 < 10) {
+            return true;
+        } else {
+            return false;
+        }
     )";
 
 
@@ -114,6 +120,28 @@ TEST(LexerTest, NextTokenFullTest) {
         {TokenType::Gt, ">"},
         {TokenType::Int, "5"},
         {TokenType::Semicolon, ";"},
+        // if (5 < 10) {
+        //     return true;
+        // } else {
+        //     return false;
+        // }
+        {TokenType::If, "if"},
+        {TokenType::Slash, "("},
+        {TokenType::Semicolon, "5"},
+        {TokenType::Semicolon, "<"},
+        {TokenType::Semicolon, "10"},
+        {TokenType::Semicolon, ")"},
+        {TokenType::Semicolon, "{"},
+        {TokenType::Semicolon, "return"},
+        {TokenType::Semicolon, "true"},
+        {TokenType::Semicolon, ";"},
+        {TokenType::Semicolon, "}"},
+        {TokenType::Semicolon, "else"},
+        {TokenType::Semicolon, "{"},
+        {TokenType::Semicolon, "return"},
+        {TokenType::Semicolon, "false"},
+        {TokenType::Semicolon, ";"},
+        {TokenType::Semicolon, "}"},
         {TokenType::Eof, ""},
     };
 
