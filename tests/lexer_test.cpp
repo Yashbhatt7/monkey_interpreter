@@ -1,46 +1,10 @@
 #include<gtest/gtest.h>
-#include "../include/lexer.hpp"
-#include "../include/token/token.hpp"
+#include "../src/lexer.hpp"
+#include "../src/token.hpp"
+
+// g++ -std=c++17 lexer_test.cpp ../src/lexer.cpp -o lexer_test -lgtest -lgtest_main -pthread -I../src
 
 TEST(LexerTest, NextTokenFullTest) {
-    // std::string input = R"(
-    //     let five = 5;
-    //     let ten = 10;
-    //
-    //     let add = fn(x, y) {
-    //     x + y;
-    //     };
-    //
-    //     let result = add(five, ten);
-    //     !-/*5;
-    //     5 < 10 > 5;
-    //
-    //     if (5 < 10) {
-    //     return true;
-    //     } else {
-    //     return false;
-    //     }
-    //
-    //     10 == 10;
-    //     10 != 9;
-    // )";
-
-
-    // std::string input  = "=+(){},;";
-
-
-    // std::string input = R"(
-    //     let five = 5;
-    //     let ten = 10;
-    //
-    //     let add = fn(x, y) {
-    //         x + y;
-    //     };
-    //
-    //     let result = add(five, ten);
-    // )";
-
-
     std::string input = R"(
         let five = 5;
         let ten = 10;
@@ -62,8 +26,8 @@ TEST(LexerTest, NextTokenFullTest) {
 
         10 == 10;
         10 != 9;
+        ["];
     )";
-
 
     Lexer l(input);
 
@@ -154,6 +118,11 @@ TEST(LexerTest, NextTokenFullTest) {
         {TokenType::Int, "10"},
         {TokenType::NotEq, "!="},
         {TokenType::Int, "9"},
+        {TokenType::Semicolon, ";"},
+        // ["];
+        {TokenType::LBracket, "["},
+        {TokenType::String, "\""},
+        {TokenType::RBracket, "]"},
         {TokenType::Semicolon, ";"},
         {TokenType::Eof, ""},
     };
