@@ -35,11 +35,12 @@ public:
     std::vector<std::unique_ptr<Statement>> Statements;
 
     std::string TokenLiteral() const override;
+    std::string String() const override;
 };
 
 class Identifier : public Expression {
 public:
-    Token Token;
+    Token token;
     std::string Value;
 
     void expressionNode() override {}
@@ -49,9 +50,9 @@ public:
 
 class LetStatement : public Statement {
 public:
-    Token Token;
+    Token token;
     std::unique_ptr<Identifier> Name;
-    std::unique_ptr<Identifier> Value;
+    std::unique_ptr<Expression> Value;
 
     void statementNode() override {}
     std::string TokenLiteral() const override;
