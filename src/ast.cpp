@@ -10,10 +10,10 @@ std::string Program::TokenLiteral() const {
 }
 
 std::string LetStatement::TokenLiteral() const {
-    return Token.literal;
+    return token.literal;
 }
 
 std::string Identifier::TokenLiteral() const {
-    return Token.literal;
+    return token.literal;
 }
 
