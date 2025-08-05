@@ -7,12 +7,15 @@
 
 class Parser {
 public:
-    Lexer* l;
+    std::unique_ptr<Lexer> l;
 
     Token curToken;
     Token peekToken;
+    Token token;
 
-    explicit Parser(Lexer* lexer);
+    explicit Parser(std::unique_ptr<Lexer> l);
+    std::unique_ptr<Statement> parseStatement();
+    std::unique_ptr<Statement> parseLetStatement();
     void nextToken();
 
     std::unique_ptr<Program> ParseProgram();
