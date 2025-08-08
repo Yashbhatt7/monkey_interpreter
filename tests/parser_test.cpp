@@ -28,20 +28,38 @@ bool testLetStatement(Statement* s, const std::string& name) {
         return false;
     }
 
+
+
     return true;
+}
+
+void checkParserErrors(Parser* p) {
+    auto errors = p->Errors();
+    if (errors.empty()) {
+        return;
+    }
+
+    ADD_FAILURE() << "Parser has " << errors.size() << " errors:";
+
+    for (const auto& msg : errors) {
+        ADD_FAILURE() << "parser error: \"" << msg <<"\"";
+    }
+
+    FAIL();
 }
 
 TEST(ParserTest, TestLetStatement) {
     std::string input = R"(
-        let x = 5;
-        let y = 10;
-        let foobar = 838383;
+        let x 5;
+        let = 10;
+        let 838383;
     )";
 
-    auto lexer = std::make_unique<Lexer> (input);
+    auto lexer = std::make_unique<Lexer>(input);
     Parser p(std::move(lexer));
 
     auto program = p.ParseProgram();
+    checkParserErrors(&p);
 
     ASSERT_NE(program, nullptr) << "ParserProgram() returned nullptr";
 
@@ -69,5 +87,4 @@ TEST(ParserTest, TestLetStatement) {
     // Check for parser errors
     // auto errors = p->Errors();
 }
-
 
