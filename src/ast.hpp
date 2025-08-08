@@ -12,11 +12,10 @@
 class Node {
 public:
     virtual std::string TokenLiteral() const = 0;
-    virtual std::string String() const = 0;
     virtual ~Node() = default;
 };
 
-// two types of nodes: expressions and statements
+// two types of Node: expressions and statements
 // Statement interface
 class Statement : public Node {
 public:
@@ -32,10 +31,11 @@ public:
 // Program Node will be root Node of every AST our parser produces
 class Program : public Node {
 public:
+    Token curToken;
+
     std::vector<std::unique_ptr<Statement>> Statements;
 
     std::string TokenLiteral() const override;
-    std::string String() const override;
 };
 
 class Identifier : public Expression {
@@ -45,7 +45,6 @@ public:
 
     void expressionNode() override {}
     std::string TokenLiteral() const override;
-    std::string String() const override;
 };
 
 class LetStatement : public Statement {
@@ -56,7 +55,15 @@ public:
 
     void statementNode() override {}
     std::string TokenLiteral() const override;
-    std::string String() const override;
+};
+
+class ReturnStatement : public Statement {
+public:
+    Token token;
+    std::unique_ptr<Expression> ReturnValue;
+
+    void statementNode() override {}
+    std::string TokenLiteral() const override;
 };
 
 #endif // AST_HPP
