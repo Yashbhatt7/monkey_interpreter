@@ -1,8 +1,9 @@
+#include<memory>
 #include "parser.hpp"
 
 // This is our initializer
 Parser::Parser(std::unique_ptr<Lexer> lexer)
-    : l(std::move(lexer)) {
+: l(std::move(lexer)){
     nextToken();
     nextToken();
 }
@@ -18,6 +19,8 @@ std::unique_ptr<Program> Parser::ParseProgram() {
     while (curToken.type != TokenType::Eof) {
         auto stmt = parseStatement();
         if (stmt != nullptr) {
+            // std::cout << "currToken is:.." << stm->Name->Value << "\n";
+            // std::cout << "curToken is:.." << stmt->token;
             program->Statements.push_back(std::move(stmt));
         }
         nextToken();
@@ -33,6 +36,65 @@ std::unique_ptr<Statement> Parser::parseStatement() {
         default:
             return nullptr;
     }
+}
+
+std::unique_ptr<LetStatement> Parser::parseLetStatement() {
+    auto stmt = std::make_unique<LetStatement>();
+    stmt->token = curToken;
+
+    if (!expectPeek(TokenType::Ident)) {
+    // std::cout << "curToken is:.." << curToken.literal << std::endl;
+    // std::cout << "peekToken is.." << peekToken.literal << std::endl;
+        return nullptr;
+    }
+    // std::cout << "curToken is:.." << curToken.literal << std::endl;
+    // std::cout << "peekToken is.." << peekToken.literal << std::endl;
+
+    stmt->Name = std::make_unique<Identifier>();
+    stmt->Name->token = curToken;
+    stmt->Name->Value = curToken.literal;
+
+    if (!expectPeek(TokenType::Assign)) {
+        // std::cout << "curToken in assign is:.." << curToken.literal << std::endl;
+        return nullptr;
+    }
+
+    while (!cutTokenIs(TokenType::Semicolon)) {
+        // std::cout << "curToken is:.." << curToken.literal << std::endl;
+        nextToken();
+    }
+
+    // std::cout << "curToken is:.." << curToken.literal << std::endl;
+    return stmt;
+}
+
+bool Parser::expectPeek(TokenType t) {
+    if (peekTokenIs(t)) {
+        nextToken();
+        return true;
+    } else {
+        peekErrors(t);
+        return false;
+    }
+}
+
+bool Parser::cutTokenIs(TokenType t) {
+    return curToken.type == t;
+}
+
+bool Parser::peekTokenIs(TokenType t) {
+    return peekToken.type == t;
+}
+
+void Parser::peekErrors(TokenType t) {
+    std::ostringstream oss;
+    oss << "expected next token to be " << TokenTypeMap::tokenTypeToString(t)
+        << ", got " << TokenTypeMap::tokenTypeToString(peekToken.type) << " instead";
+    errors.push_back(oss.str());
+}
+
+std::vector<std::string> Parser::Errors() {
+    return errors;
 }
 
 
