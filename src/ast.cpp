@@ -17,3 +17,6 @@ std::string Identifier::TokenLiteral() const {
     return token.literal;
 }
 
+std::string ReturnStatement::TokenLiteral() const {
+    return token.literal;
+}
