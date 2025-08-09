@@ -18,12 +18,13 @@ public:
     explicit Parser(std::unique_ptr<Lexer> lexer);
     std::unique_ptr<Statement> parseStatement();
     std::unique_ptr<LetStatement> parseLetStatement();
+    std::unique_ptr<ReturnStatement> parseReturnStatement();
     void nextToken();
     std::vector<std::string> Errors();
 
     std::unique_ptr<Program> ParseProgram();
     bool expectPeek(TokenType t);
-    bool cutTokenIs(TokenType t);
+    bool curTokenIs(TokenType t);
     bool peekTokenIs(TokenType t);
     void peekErrors(TokenType t);
 };
