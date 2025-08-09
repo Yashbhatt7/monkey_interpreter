@@ -1,9 +1,8 @@
 #include<memory>
 #include "parser.hpp"
 
-// This is our initializer
 Parser::Parser(std::unique_ptr<Lexer> lexer)
-: l(std::move(lexer)){
+    : l(std::move(lexer)){
     nextToken();
     nextToken();
 }
@@ -33,6 +32,8 @@ std::unique_ptr<Statement> Parser::parseStatement() {
     switch (curToken.type) {
         case TokenType::Let:
             return parseLetStatement();
+        case TokenType::Return:
+            return parseReturnStatement();
         default:
             return nullptr;
     }
@@ -59,12 +60,25 @@ std::unique_ptr<LetStatement> Parser::parseLetStatement() {
         return nullptr;
     }
 
-    while (!cutTokenIs(TokenType::Semicolon)) {
+    while (!curTokenIs(TokenType::Semicolon)) {
         // std::cout << "curToken is:.." << curToken.literal << std::endl;
         nextToken();
     }
 
     // std::cout << "curToken is:.." << curToken.literal << std::endl;
+    return stmt;
+}
+
+std::unique_ptr<ReturnStatement> Parser::parseReturnStatement() {
+    auto stmt = std::make_unique<ReturnStatement>();
+    stmt->token = curToken;
+
+    nextToken();
+
+    while (!curTokenIs(TokenType::Semicolon)) {
+        nextToken();
+    }
+
     return stmt;
 }
 
@@ -78,7 +92,7 @@ bool Parser::expectPeek(TokenType t) {
     }
 }
 
-bool Parser::cutTokenIs(TokenType t) {
+bool Parser::curTokenIs(TokenType t) {
     return curToken.type == t;
 }
 
