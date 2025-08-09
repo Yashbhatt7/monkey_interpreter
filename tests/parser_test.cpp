@@ -28,8 +28,6 @@ bool testLetStatement(Statement* s, const std::string& name) {
         return false;
     }
 
-
-
     return true;
 }
 
@@ -50,9 +48,9 @@ void checkParserErrors(Parser* p) {
 
 TEST(ParserTest, TestLetStatement) {
     std::string input = R"(
-        let x 5;
-        let = 10;
-        let 838383;
+        let x = 5;
+        let y = 10;
+        let foobar = 838383;
     )";
 
     auto lexer = std::make_unique<Lexer>(input);
@@ -87,4 +85,34 @@ TEST(ParserTest, TestLetStatement) {
     // Check for parser errors
     // auto errors = p->Errors();
 }
+
+
+
+TEST(ParserTest, TestReturnStatement) {
+    std::string input = R"(
+        return 5;
+        return 10;
+        return 993322;
+    )";
+
+    auto lexer = std::make_unique<Lexer>(input);
+    Parser p(std::move(lexer));
+
+    auto program = p.ParseProgram();
+    checkParserErrors(&p);
+
+    ASSERT_NE(program, nullptr) << "ParserProgram() returned nullptr";
+
+    ASSERT_EQ(program->Statements.size(), 3)
+        << "program.Statements does not contain 3 statement. got=" << program->Statements.size();
+
+    for (auto& stmtPtr : program->Statements) {
+        auto* returnStmt = dynamic_cast<ReturnStatement*>(stmtPtr.get());
+        ASSERT_NE(returnStmt, nullptr)
+            << "stmt is not ReturnStatement. got=" << typeid(stmtPtr).name();
+
+        EXPECT_EQ(returnStmt->TokenLiteral(), "return");
+    }
+}
+
 
