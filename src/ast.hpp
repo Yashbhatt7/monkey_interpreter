@@ -66,4 +66,12 @@ public:
     std::string TokenLiteral() const override;
 };
 
+class ExpressionStatement : public Statement {
+    Token token;
+    std::unique_ptr<Expression> Expression;
+
+    void statementNode() override {}
+    std::string TokenLiteral() const override;
+};
+
 #endif // AST_HPP
