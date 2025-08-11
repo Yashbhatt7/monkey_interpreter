@@ -20,3 +20,8 @@ std::string Identifier::TokenLiteral() const {
 std::string ReturnStatement::TokenLiteral() const {
     return token.literal;
 }
+
+std::string ExpressionStatement::TokenLiteral() const {
+    return token.literal;
+}
+
