@@ -12,6 +12,7 @@
 class Node {
 public:
     virtual std::string TokenLiteral() const = 0;
+    virtual std::string String() const = 0;
     virtual ~Node() = default;
 };
 
@@ -36,6 +37,7 @@ public:
     std::vector<std::unique_ptr<Statement>> Statements;
 
     std::string TokenLiteral() const override;
+    std::string String() const override;
 };
 
 class Identifier : public Expression {
@@ -45,6 +47,7 @@ public:
 
     void expressionNode() override {}
     std::string TokenLiteral() const override;
+    std::string String() const override;
 };
 
 class LetStatement : public Statement {
@@ -55,6 +58,7 @@ public:
 
     void statementNode() override {}
     std::string TokenLiteral() const override;
+    std::string String() const override;
 };
 
 class ReturnStatement : public Statement {
@@ -64,6 +68,7 @@ public:
 
     void statementNode() override {}
     std::string TokenLiteral() const override;
+    std::string String() const override;
 };
 
 class ExpressionStatement : public Statement {
@@ -72,6 +77,7 @@ class ExpressionStatement : public Statement {
 
     void statementNode() override {}
     std::string TokenLiteral() const override;
+    std::string String() const override;
 };
 
 #endif // AST_HPP
