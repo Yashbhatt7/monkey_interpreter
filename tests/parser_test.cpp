@@ -115,4 +115,33 @@ TEST(ParserTest, TestReturnStatement) {
     }
 }
 
+TEST(ParserTest, TestIdentifierExpression) {
+    std::string input = "foobar;";
+
+    auto l = std::make_unique<Lexer>(input);
+
+    Parser p(std::move(l));
+
+    auto program = p.ParseProgram();
+    checkParserErrors(&p);
+
+    ASSERT_NE(program, nullptr) << "ParserProgram() returned nullptr";
+
+    ASSERT_EQ(program->Statements.size(), 1)
+        << "program has not enough statements. got=" << program->Statements.size();
+
+    auto stmt = dynamic_cast<ExpressionStatement*>(program->Statements[0].get());
+    ASSERT_NE(stmt, nullptr)
+        << "program.Statements[0] is not ExpressionStatement";
+
+    auto ident = dynamic_cast<Identifier*>(stmt->Expression.get());
+    ASSERT_NE(ident, nullptr)
+        << "exp not Identifier";
+
+    EXPECT_EQ(ident->Value, "foobar")
+        << "ident.Value not foobar. get=" << ident->Value;
+
+    EXPECT_EQ(ident->TokenLiteral(), "foobar")
+        << "ident.TokenLiteral not foobar. got=" << ident->TokenLiteral();
+}
 
