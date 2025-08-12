@@ -2,9 +2,14 @@
 #define PARSER_HPP
 
 #include<sstream>
+#include<functional>
+#include<map>
 #include "ast.hpp"
 #include "lexer.hpp"
 #include "token.hpp"
+
+using prefixParseFn = std::function<std::unique_ptr<Expression>()>;
+using infixParseFn = std::function<std::unique_ptr<Expression>(std::unique_ptr<Expression>)>;
 
 class Parser {
 public:
@@ -15,10 +20,14 @@ public:
     Token token;
     std::vector<std::string> errors;
 
+    std::map<TokenType, prefixParseFn> prefixParseFns;
+    std::map<TokenType, infixParseFn> infixParseFns;
+
     explicit Parser(std::unique_ptr<Lexer> lexer);
     std::unique_ptr<Statement> parseStatement();
     std::unique_ptr<LetStatement> parseLetStatement();
     std::unique_ptr<ReturnStatement> parseReturnStatement();
+    std::unique_ptr<ExpressionStatement> parseExpressionStatement();
     void nextToken();
     std::vector<std::string> Errors();
 
@@ -27,6 +36,9 @@ public:
     bool curTokenIs(TokenType t);
     bool peekTokenIs(TokenType t);
     void peekErrors(TokenType t);
+
+    void registerPrefix(TokenType tokenType, prefixParseFn);
+    void registerInfix(TokenType tokenType, infixParseFn);
 };
 
 #endif // PARSER_HPP
