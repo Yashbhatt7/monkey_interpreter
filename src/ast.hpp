@@ -72,6 +72,7 @@ public:
 };
 
 class ExpressionStatement : public Statement {
+public:
     Token token;
     std::unique_ptr<Expression> Expression;
 
