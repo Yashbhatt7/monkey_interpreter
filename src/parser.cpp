@@ -35,7 +35,7 @@ std::unique_ptr<Statement> Parser::parseStatement() {
         case TokenType::Return:
             return parseReturnStatement();
         default:
-            return nullptr;
+            return parseExpressionStatement();
     }
 }
 
@@ -82,6 +82,19 @@ std::unique_ptr<ReturnStatement> Parser::parseReturnStatement() {
     return stmt;
 }
 
+std::unique_ptr<ExpressionStatement> Parser::parseExpressionStatement() {
+    auto stmt = std::make_unique<ExpressionStatement>();
+    stmt->token = curToken;
+
+    stmt->Expression = parseExpression(LOWEST);
+
+    if (peekTokenIs(TokenType::Semicolon)) {
+        nextToken();
+    }
+
+    return stmt;
+}
+
 bool Parser::expectPeek(TokenType t) {
     if (peekTokenIs(t)) {
         nextToken();
@@ -109,6 +122,14 @@ void Parser::peekErrors(TokenType t) {
 
 std::vector<std::string> Parser::Errors() {
     return errors;
+}
+
+void Parser::registerPrefix(TokenType tokenType, prefixParseFn fn) {
+    prefixParseFns[tokenType] = fn;
+}
+
+void Parser::registerInfix(TokenType tokenType, infixParseFn fn) {
+    infixParseFns[tokenType] = fn;
 }
 
 
