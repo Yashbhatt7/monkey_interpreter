@@ -5,6 +5,8 @@ Parser::Parser(std::unique_ptr<Lexer> lexer)
     : l(std::move(lexer)){
     nextToken();
     nextToken();
+
+    // prefixParseFns =
 }
 
 void Parser::nextToken() {
@@ -86,13 +88,25 @@ std::unique_ptr<ExpressionStatement> Parser::parseExpressionStatement() {
     auto stmt = std::make_unique<ExpressionStatement>();
     stmt->token = curToken;
 
-    stmt->Expression = parseExpression(LOWEST);
+    stmt->Expression = parseExpression(static_cast<int>(Precedence::LOWEST));
 
     if (peekTokenIs(TokenType::Semicolon)) {
         nextToken();
     }
 
     return stmt;
+}
+
+std::unique_ptr<Expression> Parser::parseExpression(int precedence) {
+    auto it = prefixParseFns.find(curToken.type);
+    if (it == prefixParseFns.end()) {
+        return nullptr;
+    }
+
+    prefixParseFn prefix = it->second;
+    std::unique_ptr<Expression> leftExp = prefix();
+
+    return leftExp;
 }
 
 bool Parser::expectPeek(TokenType t) {
