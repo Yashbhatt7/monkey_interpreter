@@ -8,6 +8,16 @@
 #include "lexer.hpp"
 #include "token.hpp"
 
+enum class Precedence {
+    LOWEST = 1,    // Start at 1 (skipping the placeholder)
+    EQUALS,        // ==
+    LESSGREATER,   // > or <
+    SUM,           // +
+    PRODUCT,       // *
+    PREFIX,        // -X or !X
+    CALL,          // myFunction(X)
+};
+
 using prefixParseFn = std::function<std::unique_ptr<Expression>()>;
 using infixParseFn = std::function<std::unique_ptr<Expression>(std::unique_ptr<Expression>)>;
 
@@ -28,6 +38,7 @@ public:
     std::unique_ptr<LetStatement> parseLetStatement();
     std::unique_ptr<ReturnStatement> parseReturnStatement();
     std::unique_ptr<ExpressionStatement> parseExpressionStatement();
+    std::unique_ptr<Expression> parseExpression(int precedence);
     void nextToken();
     std::vector<std::string> Errors();
 
