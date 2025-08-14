@@ -39,6 +39,7 @@ public:
     std::unique_ptr<ReturnStatement> parseReturnStatement();
     std::unique_ptr<ExpressionStatement> parseExpressionStatement();
     std::unique_ptr<Expression> parseExpression(int precedence);
+    std::unique_ptr<Expression> parseIdentifier();
     void nextToken();
     std::vector<std::string> Errors();
 
