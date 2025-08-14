@@ -3,10 +3,18 @@
 
 Parser::Parser(std::unique_ptr<Lexer> lexer)
     : l(std::move(lexer)){
-    nextToken();
-    nextToken();
+    registerPrefix(TokenType::Ident, [this]() { return parseIdentifier(); }); // compiler knows that this means "return this->parseIdentifier();"
 
-    // prefixParseFns =
+    nextToken();
+    nextToken();
+}
+
+std::unique_ptr<Expression> Parser::parseIdentifier() {
+    auto ident = std::make_unique<Identifier>();
+    ident->token = curToken;
+    ident->Value = curToken.literal;
+
+    return ident;
 }
 
 void Parser::nextToken() {
@@ -109,6 +117,14 @@ std::unique_ptr<Expression> Parser::parseExpression(int precedence) {
     return leftExp;
 }
 
+void Parser::registerPrefix(TokenType tokenType, prefixParseFn fn) {
+    prefixParseFns[tokenType] = fn;
+}
+
+void Parser::registerInfix(TokenType tokenType, infixParseFn fn) {
+    infixParseFns[tokenType] = fn;
+}
+
 bool Parser::expectPeek(TokenType t) {
     if (peekTokenIs(t)) {
         nextToken();
@@ -136,14 +152,6 @@ void Parser::peekErrors(TokenType t) {
 
 std::vector<std::string> Parser::Errors() {
     return errors;
-}
-
-void Parser::registerPrefix(TokenType tokenType, prefixParseFn fn) {
-    prefixParseFns[tokenType] = fn;
-}
-
-void Parser::registerInfix(TokenType tokenType, infixParseFn fn) {
-    infixParseFns[tokenType] = fn;
 }
 
 
