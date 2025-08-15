@@ -2,11 +2,18 @@
 #include "parser.hpp"
 
 Parser::Parser(std::unique_ptr<Lexer> lexer)
-    : l(std::move(lexer)){
-    registerPrefix(TokenType::Ident, [this]() { return parseIdentifier(); }); // compiler knows that this means "return this->parseIdentifier();"
+    : l(std::move(lexer)) {
 
+    // compiler knows that "this" in capture means "return this->parseIdentifier();"
+    registerPrefix(TokenType::Ident, [this]() { return parseIdentifier(); });
+    registerPrefix(TokenType::Int, [this]() { return parseIntegerLiteral(); });
     nextToken();
     nextToken();
+}
+
+void Parser::nextToken() {
+    curToken = peekToken;
+    peekToken = l->NextToken();
 }
 
 std::unique_ptr<Expression> Parser::parseIdentifier() {
@@ -17,9 +24,23 @@ std::unique_ptr<Expression> Parser::parseIdentifier() {
     return ident;
 }
 
-void Parser::nextToken() {
-    curToken = peekToken;
-    peekToken = l->NextToken();
+std::unique_ptr<Expression> Parser::parseIntegerLiteral() {
+    auto lit = std::make_unique<IntegerLiteral>();
+    lit->token = curToken;
+    std::cout << "CURTOKEN IS: " << curToken.literal << "\n";
+
+    std::stringstream ss(curToken.literal);
+    int64_t value;
+
+    if (!(ss >> value) || !ss.eof()) {
+        std::string msg = "could not parse \"" + curToken.literal + "\" as integer";
+        errors.push_back(msg);
+        return nullptr;
+    }
+
+    lit->Value = value;
+
+    return lit;
 }
 
 std::unique_ptr<Program> Parser::ParseProgram() {
@@ -95,6 +116,7 @@ std::unique_ptr<ReturnStatement> Parser::parseReturnStatement() {
 std::unique_ptr<ExpressionStatement> Parser::parseExpressionStatement() {
     auto stmt = std::make_unique<ExpressionStatement>();
     stmt->token = curToken;
+    std::cout << "curToken is: " << curToken.literal << "\n";
 
     stmt->Expression = parseExpression(static_cast<int>(Precedence::LOWEST));
 
