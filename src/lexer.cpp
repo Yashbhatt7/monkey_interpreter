@@ -92,13 +92,13 @@ Token Lexer::NextToken() {
             std::cout << "s: " << s << "\n";
         }
         case '{': {
-            tok = newToken(TokenType::LSquarly, ch); break;
-            std::string s = TokenTypeMap::tokenTypeToString(TokenType::LSquarly);
+            tok = newToken(TokenType::LSquirly, ch); break;
+            std::string s = TokenTypeMap::tokenTypeToString(TokenType::LSquirly);
             std::cout << "s: " << s << "\n";
         }
         case '}': {
-            tok = newToken(TokenType::RSquarly, ch); break;
-            std::string s = TokenTypeMap::tokenTypeToString(TokenType::RSquarly);
+            tok = newToken(TokenType::RSquirly, ch); break;
+            std::string s = TokenTypeMap::tokenTypeToString(TokenType::RSquirly);
             std::cout << "s: " << s << "\n";
         }
         case '[': {
