@@ -26,6 +26,10 @@ std::string ExpressionStatement::TokenLiteral() const {
     return token.literal;
 }
 
+std::string IntegerLiteral::TokenLiteral() const {
+    return token.literal;
+}
+
 std::string Program::String() const {
     std::ostringstream out;
     for (const auto& s : Statements) {
@@ -75,6 +79,10 @@ std::string ExpressionStatement::String() const {
 
 std::string Identifier::String() const {
     return Value;
+}
+
+std::string IntegerLiteral::String() const {
+    return token.literal;
 }
 
 
