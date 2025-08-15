@@ -125,23 +125,48 @@ TEST(ParserTest, TestIdentifierExpression) {
     auto program = p.ParseProgram();
     checkParserErrors(&p);
 
-    ASSERT_NE(program, nullptr) << "ParserProgram() returned nullptr";
-
     ASSERT_EQ(program->Statements.size(), 1)
         << "program has not enough statements. got=" << program->Statements.size();
 
     auto stmt = dynamic_cast<ExpressionStatement*>(program->Statements[0].get());
     ASSERT_NE(stmt, nullptr)
-        << "program.Statements[0] is not ExpressionStatement";
+        << "program.Statements[0] is not ExpressionStatement.";
 
     auto ident = dynamic_cast<Identifier*>(stmt->Expression.get());
     ASSERT_NE(ident, nullptr)
-        << "exp not Identifier";
+        << "exp not Identifier.";
 
     EXPECT_EQ(ident->Value, "foobar")
         << "ident.Value not foobar. get=" << ident->Value;
 
     EXPECT_EQ(ident->TokenLiteral(), "foobar")
         << "ident.TokenLiteral not foobar. got=" << ident->TokenLiteral();
+}
+
+TEST(ParserTest, TestIntegerLiteralExpression) {
+    std::string input = "5;";
+
+    auto l = std::make_unique<Lexer>(input);
+    Parser p(std::move(l));
+
+    auto program = p.ParseProgram();
+    checkParserErrors(&p);
+
+    ASSERT_EQ(program->Statements.size(), 1)
+        << "program has not enough statements. got=" << program->Statements.size();
+
+    auto stmt = dynamic_cast<ExpressionStatement*>(program->Statements[0].get());
+    ASSERT_NE(stmt, nullptr)
+        << "program.Statement[0] is not ExpressionStatement.";
+
+    auto literal = dynamic_cast<IntegerLiteral*>(stmt->Expression.get());
+    ASSERT_NE(literal, nullptr)
+        << "exp not integerliteral.";
+
+    EXPECT_EQ(literal->Value, 5)
+        << "literal.Value not " << 5 << ". got=" << literal->Value;
+
+    EXPECT_EQ(literal->TokenLiteral(), "5")
+        << "literal.TokenLiteral not " << "5. " << "got=" << literal->TokenLiteral();
 }
 
