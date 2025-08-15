@@ -81,4 +81,14 @@ public:
     std::string String() const override;
 };
 
+class IntegerLiteral : public Expression {
+public:
+    Token token;
+    int64_t Value;
+
+    void expressionNode() override {}
+    std::string TokenLiteral() const override;
+    std::string String() const override;
+};
+
 #endif // AST_HPP
