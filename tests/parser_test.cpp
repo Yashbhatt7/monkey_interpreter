@@ -4,6 +4,12 @@
 #include "../src/ast.hpp"
 #include "../src/parser.hpp"
 
+struct PrefixTest {
+    std::string input;
+    std::string operator_;
+    int64_t integerValue;
+};
+
 // Helper function to test let statement
 bool testLetStatement(Statement* s, const std::string& name) {
     if (s->TokenLiteral() != "let") {
@@ -25,6 +31,26 @@ bool testLetStatement(Statement* s, const std::string& name) {
 
     if (letStmt->Name->TokenLiteral() != name) {
         ADD_FAILURE() << "s.Name not '" << name << "'. got=" << letStmt->Name->TokenLiteral();
+        return false;
+    }
+
+    return true;
+}
+
+bool testIntegerLiteral(Expression* il, int64_t value) {
+    IntegerLiteral* integ = dynamic_cast<IntegerLiteral*>(il);
+    if (!integ) {
+        ADD_FAILURE() << "il not IntegerLiteral. get=" << typeid(*il).name();
+        return false;
+    }
+
+    if (integ->Value != value) {
+        ADD_FAILURE() << "integ.Value not " << value << ". got=" << integ->Value;
+    }
+
+    std::string expectedLiteral = std::to_string(value);
+    if (integ->TokenLiteral() != expectedLiteral) {
+        ADD_FAILURE() << "integ.TokenLiteral not " << value << ". got=" << integ->TokenLiteral();
         return false;
     }
 
@@ -82,8 +108,6 @@ TEST(ParserTest, TestLetStatement) {
             << "Test [" << i << "] - Let statement test failed for identifier: " << tt.expectedIdentifier;
     }
 }
-
-
 
 TEST(ParserTest, TestReturnStatement) {
     std::string input = R"(
@@ -190,8 +214,8 @@ TEST(ParserTest, TestParsingPrefixExpressions) {
         ASSERT_NE(exp, nullptr)
             << "stmt is not PrefixExpression";
 
-        EXPECT_EQ(exp->Operator, tt.operator)
-            << "exp.Operator is not" << tt.operator << ". got=" << exp.Operator;
+        EXPECT_EQ(exp->Operator, tt.operator_)
+            << "exp.Operator is not" << tt.operator_ << ". got=" << exp->Operator;
 
         EXPECT_TRUE(testIntegerLiteral(exp->Right.get(), tt.integerValue));
     }
