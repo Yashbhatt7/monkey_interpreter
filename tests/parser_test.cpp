@@ -46,6 +46,7 @@ bool testIntegerLiteral(Expression* il, int64_t value) {
 
     if (integ->Value != value) {
         ADD_FAILURE() << "integ.Value not " << value << ". got=" << integ->Value;
+        return false;
     }
 
     std::string expectedLiteral = std::to_string(value);
