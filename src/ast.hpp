@@ -91,4 +91,16 @@ public:
     std::string String() const override;
 };
 
+class PrefixExpression : public Expression {
+public:
+    Token token; // The prefix token, e.g. !
+    std::string Operator;
+
+    // The "Right" field contains the expression to the right of the "Operator"
+    std::unique_ptr<Expression> Right;
+    void expressionNode() override {}
+    std::string TokenLiteral() const override;
+    std::string String() const override;
+};
+
 #endif // AST_HPP
