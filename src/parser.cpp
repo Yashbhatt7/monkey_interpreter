@@ -7,6 +7,9 @@ Parser::Parser(std::unique_ptr<Lexer> lexer)
     // compiler knows that "this" in capture means "return this->parseIdentifier();"
     registerPrefix(TokenType::Ident, [this]() { return parseIdentifier(); });
     registerPrefix(TokenType::Int, [this]() { return parseIntegerLiteral(); });
+    registerPrefix(TokenType::Bang, [this]() { return parsePrefixExpression(); });
+    registerPrefix(TokenType::Minus, [this]() { return parsePrefixExpression(); });
+
     nextToken();
     nextToken();
 }
@@ -41,6 +44,18 @@ std::unique_ptr<Expression> Parser::parseIntegerLiteral() {
     lit->Value = value;
 
     return lit;
+}
+
+std::unique_ptr<Expression> Parser::parsePrefixExpression() {
+    auto expression = std::make_unique<PrefixExpression>();
+    expression->token = curToken;
+    expression->Operator = curToken.literal;
+
+    nextToken();
+
+    expression->Right = parseExpression(static_cast<int>(Precedence::PREFIX));
+
+    return expression;
 }
 
 std::unique_ptr<Program> Parser::ParseProgram() {
@@ -130,6 +145,7 @@ std::unique_ptr<ExpressionStatement> Parser::parseExpressionStatement() {
 std::unique_ptr<Expression> Parser::parseExpression(int precedence) {
     auto it = prefixParseFns.find(curToken.type);
     if (it == prefixParseFns.end()) {
+        noPrefixParseFnError(curToken.type);
         return nullptr;
     }
 
@@ -169,6 +185,12 @@ void Parser::peekErrors(TokenType t) {
     std::ostringstream oss;
     oss << "expected next token to be " << TokenTypeMap::tokenTypeToString(t)
         << ", got " << TokenTypeMap::tokenTypeToString(peekToken.type) << " instead";
+    errors.push_back(oss.str());
+}
+
+void Parser::noPrefixParseFnError(TokenType t) {
+    std::ostringstream oss;
+    oss << "no prefix parse function for " << TokenTypeMap::tokenTypeToString(t) << " found";
     errors.push_back(oss.str());
 }
 
