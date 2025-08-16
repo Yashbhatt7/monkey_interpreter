@@ -81,9 +81,6 @@ TEST(ParserTest, TestLetStatement) {
         EXPECT_TRUE(testLetStatement(stmt, tt.expectedIdentifier))
             << "Test [" << i << "] - Let statement test failed for identifier: " << tt.expectedIdentifier;
     }
-
-    // Check for parser errors
-    // auto errors = p->Errors();
 }
 
 
@@ -168,5 +165,35 @@ TEST(ParserTest, TestIntegerLiteralExpression) {
 
     EXPECT_EQ(literal->TokenLiteral(), "5")
         << "literal.TokenLiteral not " << "5. " << "got=" << literal->TokenLiteral();
+}
+
+TEST(ParserTest, TestParsingPrefixExpressions) {
+    std::vector<PrefixTest> prefixTests {
+        {"!5;", "!", 5},
+        {"-15;", "-", 15},
+    };
+
+    for (const auto& tt :prefixTests) {
+        auto l = std::make_unique<Lexer>(tt.input);
+        Parser p(std::move(l));
+        auto program = p.ParseProgram();
+        checkParserErrors(&p);
+
+        ASSERT_EQ(program->Statements.size(), 1)
+            << "program.Statements does not contain 1 statements. got=" << program->Statements.size();
+
+        auto stmt = dynamic_cast<ExpressionStatement*>(program->Statements[0].get());
+        ASSERT_NE(stmt, nullptr)
+            << "program.Statements[0] is not ExpressionStatement";
+
+        auto exp = dynamic_cast<PrefixExpression*>(stmt->Expression.get());
+        ASSERT_NE(exp, nullptr)
+            << "stmt is not PrefixExpression";
+
+        EXPECT_EQ(exp->Operator, tt.operator)
+            << "exp.Operator is not" << tt.operator << ". got=" << exp.Operator;
+
+        EXPECT_TRUE(testIntegerLiteral(exp->Right.get(), tt.integerValue));
+    }
 }
 
