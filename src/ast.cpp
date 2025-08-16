@@ -30,6 +30,10 @@ std::string IntegerLiteral::TokenLiteral() const {
     return token.literal;
 }
 
+std::string PrefixExpression::TokenLiteral() const {
+    return token.literal;
+}
+
 std::string Program::String() const {
     std::ostringstream out;
     for (const auto& s : Statements) {
@@ -85,4 +89,18 @@ std::string IntegerLiteral::String() const {
     return token.literal;
 }
 
+std::string PrefixExpression::String() const {
+        // std::ostringstream out;
+    //
+    // out << TokenLiteral() << " ";
+
+
+    std::ostringstream out;
+    out << "(";
+    out << Operator;
+    out << Right->String();
+    out << ")";
+
+    return out.str();
+}
 
