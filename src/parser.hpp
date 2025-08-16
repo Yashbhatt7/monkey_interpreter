@@ -34,6 +34,7 @@ public:
     std::map<TokenType, infixParseFn> infixParseFns;
 
     explicit Parser(std::unique_ptr<Lexer> lexer);
+    std::unique_ptr<Program> ParseProgram();
     std::unique_ptr<Statement> parseStatement();
     std::unique_ptr<LetStatement> parseLetStatement();
     std::unique_ptr<ReturnStatement> parseReturnStatement();
@@ -41,10 +42,11 @@ public:
     std::unique_ptr<Expression> parseExpression(int precedence);
     std::unique_ptr<Expression> parseIdentifier();
     std::unique_ptr<Expression> parseIntegerLiteral();
+    std::unique_ptr<Expression> parsePrefixExpression();
     void nextToken();
     std::vector<std::string> Errors();
+    void noPrefixParseFnError(TokenType t);
 
-    std::unique_ptr<Program> ParseProgram();
     bool expectPeek(TokenType t);
     bool curTokenIs(TokenType t);
     bool peekTokenIs(TokenType t);
