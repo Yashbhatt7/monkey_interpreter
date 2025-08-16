@@ -90,12 +90,8 @@ std::string IntegerLiteral::String() const {
 }
 
 std::string PrefixExpression::String() const {
-        // std::ostringstream out;
-    //
-    // out << TokenLiteral() << " ";
-
-
     std::ostringstream out;
+
     out << "(";
     out << Operator;
     out << Right->String();
