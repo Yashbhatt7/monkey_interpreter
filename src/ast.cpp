@@ -34,6 +34,10 @@ std::string PrefixExpression::TokenLiteral() const {
     return token.literal;
 }
 
+std::string InfixExpression::TokenLiteral() const {
+    return token.literal;
+}
+
 std::string Program::String() const {
     std::ostringstream out;
     for (const auto& s : Statements) {
@@ -94,6 +98,18 @@ std::string PrefixExpression::String() const {
 
     out << "(";
     out << Operator;
+    out << Right->String();
+    out << ")";
+
+    return out.str();
+}
+
+std::string InfixExpression::String() const {
+    std::ostringstream out;
+
+    out << "(";
+    out << Left->String();
+    out << " " << Operator << " ";
     out << Right->String();
     out << ")";
 
