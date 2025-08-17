@@ -4,10 +4,17 @@
 #include "../src/ast.hpp"
 #include "../src/parser.hpp"
 
-struct PrefixTest {
+struct PrefixTests {
     std::string input;
     std::string operator_;
     int64_t integerValue;
+};
+
+struct InfixTests {
+    std::string input;
+    int64_t leftValue;
+    std::string operator_;
+    int64_t rightValue;
 };
 
 // Helper function to test let statement
@@ -193,7 +200,7 @@ TEST(ParserTest, TestIntegerLiteralExpression) {
 }
 
 TEST(ParserTest, TestParsingPrefixExpressions) {
-    std::vector<PrefixTest> prefixTests {
+    std::vector<PrefixTests> prefixTests {
         {"!5;", "!", 5},
         {"-15;", "-", 15},
     };
@@ -219,6 +226,44 @@ TEST(ParserTest, TestParsingPrefixExpressions) {
             << "exp.Operator is not" << tt.operator_ << ". got=" << exp->Operator;
 
         EXPECT_TRUE(testIntegerLiteral(exp->Right.get(), tt.integerValue));
+    }
+}
+
+TEST(ParserTest, TestParsingInfixExpressions) {
+    std::vector<InfixTests> infixTests {
+        {"5 + 5;", 5, "+", 5},
+        {"5 - 5;", 5, "-", 5},
+        {"5 * 5;", 5, "*", 5},
+        {"5 / 5;", 5, "/", 5},
+        {"5 > 5;", 5, ">", 5},
+        {"5 < 5;", 5, "<", 5},
+        {"5 == 5;", 5, "==", 5},
+        {"5 != 5;", 5, "!=", 5},
+    };
+
+    for (const auto& tt : infixTests) {
+        auto l = std::make_unique<Lexer>(tt.input);
+        Parser p(std::move(l));
+        auto program = p.ParseProgram();
+        checkParserErrors(&p);
+
+        ASSERT_EQ(program->Statements.size(), 1)
+            << "program.Statements does not contain 1 statements. got=" << program->Statements.size();
+
+        auto stmt = dynamic_cast<ExpressionStatement*>(program->Statements[0].get());
+        ASSERT_NE(stmt, nullptr)
+            << "program.Statements[0] is not ExpressionStatement";
+
+        auto exp = dynamic_cast<InfixExpression*>(stmt->Expression.get());
+        ASSERT_NE(exp, nullptr)
+            << "exp is not InfixExpression";
+
+        EXPECT_TRUE(testIntegerLiteral(exp->Left.get(), tt.leftValue));
+
+        EXPECT_EQ(exp->Operator, tt.operator_)
+            << "exp.Operator is not" << tt.operator_ << ". got=" << exp->Operator;
+
+        EXPECT_TRUE(testIntegerLiteral(exp->Right.get(), tt.rightValue));
     }
 }
 
