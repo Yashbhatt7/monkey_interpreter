@@ -98,6 +98,21 @@ public:
 
     // The "Right" field contains the expression to the right of the "Operator"
     std::unique_ptr<Expression> Right;
+
+    void expressionNode() override {}
+    std::string TokenLiteral() const override;
+    std::string String() const override;
+};
+
+class InfixExpression : public Expression {
+public:
+    Token token; // The operator token, e.g. +
+    // The "Left" field, which can hold any expression
+    std::unique_ptr<Expression> Left;
+    std::string Operator;
+    // The "Right" field contains the expression to the right of the "Operator"
+    std::unique_ptr<Expression> Right;
+
     void expressionNode() override {}
     std::string TokenLiteral() const override;
     std::string String() const override;
