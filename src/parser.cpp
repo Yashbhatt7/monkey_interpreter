@@ -1,7 +1,7 @@
 #include<memory>
 #include "parser.hpp"
 
-const std::unordered_map<TokenType, Precedence> Parser::precedences = {
+std::unordered_map<TokenType, Precedence> Parser::precedences = {
     { TokenType::Eq,        Precedence::EQUALS },
     { TokenType::NotEq,     Precedence::EQUALS },
     { TokenType::Lt,        Precedence::LESSGREATER },
@@ -18,8 +18,18 @@ Parser::Parser(std::unique_ptr<Lexer> lexer)
     // compiler knows that "this" in capture means "return this->parseIdentifier();"
     registerPrefix(TokenType::Ident, [this]() { return parseIdentifier(); });
     registerPrefix(TokenType::Int, [this]() { return parseIntegerLiteral(); });
+
     registerPrefix(TokenType::Bang, [this]() { return parsePrefixExpression(); });
     registerPrefix(TokenType::Minus, [this]() { return parsePrefixExpression(); });
+
+    registerInfix(TokenType::Plus, [this](std::unique_ptr<Expression> left) { return parseInfixExpression(std::move(left)); });
+    registerInfix(TokenType::Minus, [this](std::unique_ptr<Expression> left) { return parseInfixExpression(std::move(left)); });
+    registerInfix(TokenType::Slash, [this](std::unique_ptr<Expression> left) { return parseInfixExpression(std::move(left)); });
+    registerInfix(TokenType::Asterisk, [this](std::unique_ptr<Expression> left) { return parseInfixExpression(std::move(left)); });
+    registerInfix(TokenType::Eq, [this](std::unique_ptr<Expression> left) { return parseInfixExpression(std::move(left)); });
+    registerInfix(TokenType::NotEq, [this](std::unique_ptr<Expression> left) { return parseInfixExpression(std::move(left)); });
+    registerInfix(TokenType::Lt, [this](std::unique_ptr<Expression> left) { return parseInfixExpression(std::move(left)); });
+    registerInfix(TokenType::Gt, [this](std::unique_ptr<Expression> left) { return parseInfixExpression(std::move(left)); });
 
     nextToken();
     nextToken();
@@ -41,7 +51,7 @@ std::unique_ptr<Expression> Parser::parseIdentifier() {
 std::unique_ptr<Expression> Parser::parseIntegerLiteral() {
     auto lit = std::make_unique<IntegerLiteral>();
     lit->token = curToken;
-    std::cout << "CURTOKEN IS: " << curToken.literal << "\n";
+    // std::cout << "CURTOKEN IS: " << curToken.literal << "\n";
 
     std::stringstream ss(curToken.literal);
     int64_t value;
@@ -65,6 +75,21 @@ std::unique_ptr<Expression> Parser::parsePrefixExpression() {
     nextToken();
 
     expression->Right = parseExpression(static_cast<int>(Precedence::PREFIX));
+
+    return expression;
+}
+
+std::unique_ptr<Expression> Parser::parseInfixExpression(std::unique_ptr<Expression> left) {
+    auto expression = std::make_unique<InfixExpression>();
+    expression->token = curToken;
+    std::cout << "curToken for infixExpression method is: " << curToken.literal << "\n";
+    expression->Operator = curToken.literal;
+    expression->Left = std::move(left);
+    std::cout << "Left in infixExpression method: " << expression->Left->TokenLiteral();
+
+    int precedence = curPrecedence();
+    nextToken();
+    expression->Right = parseExpression(precedence);
 
     return expression;
 }
@@ -142,7 +167,7 @@ std::unique_ptr<ReturnStatement> Parser::parseReturnStatement() {
 std::unique_ptr<ExpressionStatement> Parser::parseExpressionStatement() {
     auto stmt = std::make_unique<ExpressionStatement>();
     stmt->token = curToken;
-    std::cout << "curToken is: " << curToken.literal << "\n";
+    // std::cout << "curToken is: " << curToken.literal << "\n";
 
     stmt->Expression = parseExpression(static_cast<int>(Precedence::LOWEST));
 
@@ -155,6 +180,7 @@ std::unique_ptr<ExpressionStatement> Parser::parseExpressionStatement() {
 
 std::unique_ptr<Expression> Parser::parseExpression(int precedence) {
     auto it = prefixParseFns.find(curToken.type);
+    std::cout << "curToken for parseExpression method is: " << curToken.literal << "\n";
     if (it == prefixParseFns.end()) {
         noPrefixParseFnError(curToken.type);
         return nullptr;
