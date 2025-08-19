@@ -42,11 +42,12 @@ public:
     std::unique_ptr<Expression> parseIdentifier();
     std::unique_ptr<Expression> parseIntegerLiteral();
     std::unique_ptr<Expression> parsePrefixExpression();
+    std::unique_ptr<Expression> parseInfixExpression(std::unique_ptr<Expression> left);
     void nextToken();
     std::vector<std::string> Errors();
     void noPrefixParseFnError(TokenType t);
 
-    static const std::unordered_map<TokenType, Precedence> precedences;
+    static std::unordered_map<TokenType, Precedence> precedences;
 
     int peekPrecedence();
     int curPrecedence();
