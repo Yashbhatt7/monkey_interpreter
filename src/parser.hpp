@@ -3,7 +3,6 @@
 
 #include<sstream>
 #include<functional>
-#include<map>
 #include "ast.hpp"
 #include "lexer.hpp"
 #include "token.hpp"
@@ -30,8 +29,8 @@ public:
     Token token;
     std::vector<std::string> errors;
 
-    std::map<TokenType, prefixParseFn> prefixParseFns;
-    std::map<TokenType, infixParseFn> infixParseFns;
+    std::unordered_map<TokenType, prefixParseFn> prefixParseFns;
+    std::unordered_map<TokenType, infixParseFn> infixParseFns;
 
     explicit Parser(std::unique_ptr<Lexer> lexer);
     std::unique_ptr<Program> ParseProgram();
@@ -46,6 +45,11 @@ public:
     void nextToken();
     std::vector<std::string> Errors();
     void noPrefixParseFnError(TokenType t);
+
+    static const std::unordered_map<TokenType, Precedence> precedences;
+
+    int peekPrecedence();
+    int curPrecedence();
 
     bool expectPeek(TokenType t);
     bool curTokenIs(TokenType t);

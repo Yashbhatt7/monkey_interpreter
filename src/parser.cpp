@@ -1,6 +1,17 @@
 #include<memory>
 #include "parser.hpp"
 
+const std::unordered_map<TokenType, Precedence> Parser::precedences = {
+    { TokenType::Eq,        Precedence::EQUALS },
+    { TokenType::NotEq,     Precedence::EQUALS },
+    { TokenType::Lt,        Precedence::LESSGREATER },
+    { TokenType::Gt,        Precedence::LESSGREATER },
+    { TokenType::Plus,      Precedence::SUM },
+    { TokenType::Minus,     Precedence::SUM },
+    { TokenType::Slash,     Precedence::PRODUCT },
+    { TokenType::Asterisk,  Precedence::PRODUCT },
+};
+
 Parser::Parser(std::unique_ptr<Lexer> lexer)
     : l(std::move(lexer)) {
 
@@ -179,6 +190,24 @@ bool Parser::curTokenIs(TokenType t) {
 
 bool Parser::peekTokenIs(TokenType t) {
     return peekToken.type == t;
+}
+
+int Parser::peekPrecedence() {
+    auto it = precedences.find(peekToken.type);
+    if (it != precedences.end()) {
+        return static_cast<int>(it->second);
+    }
+
+    return static_cast<int>(Precedence::LOWEST);
+}
+
+int Parser::curPrecedence() {
+    auto it = precedences.find(peekToken.type);
+    if (it != precedences.end()) {
+        return static_cast<int>(it->second);
+    }
+
+    return static_cast<int>(Precedence::LOWEST);
 }
 
 void Parser::peekErrors(TokenType t) {
