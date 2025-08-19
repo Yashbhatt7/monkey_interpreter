@@ -47,7 +47,7 @@ public:
     std::vector<std::string> Errors();
     void noPrefixParseFnError(TokenType t);
 
-    static std::unordered_map<TokenType, Precedence> precedences;
+    static const std::unordered_map<TokenType, Precedence> precedences;
 
     int peekPrecedence();
     int curPrecedence();
