@@ -1,7 +1,7 @@
 #include<memory>
 #include "parser.hpp"
 
-std::unordered_map<TokenType, Precedence> Parser::precedences = {
+const std::unordered_map<TokenType, Precedence> Parser::precedences = {
     { TokenType::Eq,        Precedence::EQUALS },
     { TokenType::NotEq,     Precedence::EQUALS },
     { TokenType::Lt,        Precedence::LESSGREATER },
@@ -82,28 +82,30 @@ std::unique_ptr<Expression> Parser::parsePrefixExpression() {
 std::unique_ptr<Expression> Parser::parseInfixExpression(std::unique_ptr<Expression> left) {
     auto expression = std::make_unique<InfixExpression>();
     expression->token = curToken;
-    std::cout << "curToken for infixExpression method is: " << curToken.literal << "\n";
+    // std::cout << "curToken for infixExpression method is: " << curToken.literal << "\n";
     expression->Operator = curToken.literal;
     expression->Left = std::move(left);
-    std::cout << "Left in infixExpression method: " << expression->Left->TokenLiteral();
+    // std::cout << "Left in infixExpression method: " << expression->Left->TokenLiteral() << "\n";
 
     int precedence = curPrecedence();
+    // std::cout << "in between left and right: " << curToken.literal << "\n";
     nextToken();
     expression->Right = parseExpression(precedence);
+    // std::cout << "Right in infixExpression method: " << expression->Right->TokenLiteral() << "\n";
 
     return expression;
 }
 
+// <==----------------------------------From here parser starts parsing the program-----------------------------------------==>
 std::unique_ptr<Program> Parser::ParseProgram() {
     auto program = std::make_unique<Program>();
 
     while (curToken.type != TokenType::Eof) {
-        auto stmt = parseStatement();
+        auto stmt = parseStatement(); // Type => Statement
         if (stmt != nullptr) {
-            // std::cout << "currToken is:.." << stm->Name->Value << "\n";
-            // std::cout << "curToken is:.." << stmt->token;
             program->Statements.push_back(std::move(stmt));
         }
+        // std::cout << "im right its semicolon..." << curToken.literal << "\n";
         nextToken();
     }
 
@@ -179,15 +181,29 @@ std::unique_ptr<ExpressionStatement> Parser::parseExpressionStatement() {
 }
 
 std::unique_ptr<Expression> Parser::parseExpression(int precedence) {
-    auto it = prefixParseFns.find(curToken.type);
-    std::cout << "curToken for parseExpression method is: " << curToken.literal << "\n";
-    if (it == prefixParseFns.end()) {
+    auto prefixItr = prefixParseFns.find(curToken.type);
+    // std::cout << "curToken for parseExpression method is: " << curToken.literal << "\n";
+    if (prefixItr == prefixParseFns.end()) {
         noPrefixParseFnError(curToken.type);
         return nullptr;
     }
 
-    prefixParseFn prefix = it->second;
+    prefixParseFn prefix = prefixItr->second;
     std::unique_ptr<Expression> leftExp = prefix();
+
+    while (!peekTokenIs(TokenType::Semicolon) && precedence < peekPrecedence()) {
+        auto infixItr = infixParseFns.find(peekToken.type);
+        // std::cout << "peekToken type for precedence check: " << peekToken.literal << "\n";
+        if (infixItr == infixParseFns.end()) {
+            return leftExp;
+        }
+
+        infixParseFn infix = infixItr->second;
+
+        nextToken();
+        leftExp = infix(std::move(leftExp));
+        std::cout << "leftExp: " << leftExp->TokenLiteral() << "\n";
+    }
 
     return leftExp;
 }
@@ -220,6 +236,7 @@ bool Parser::peekTokenIs(TokenType t) {
 
 int Parser::peekPrecedence() {
     auto it = precedences.find(peekToken.type);
+    // std::cout << "precedence: " << static_cast<int>(it->second) << "\n";
     if (it != precedences.end()) {
         return static_cast<int>(it->second);
     }
