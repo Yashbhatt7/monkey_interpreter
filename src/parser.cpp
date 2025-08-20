@@ -245,7 +245,7 @@ int Parser::peekPrecedence() {
 }
 
 int Parser::curPrecedence() {
-    auto it = precedences.find(peekToken.type);
+    auto it = precedences.find(curToken.type);
     if (it != precedences.end()) {
         return static_cast<int>(it->second);
     }
