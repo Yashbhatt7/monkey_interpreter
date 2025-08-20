@@ -17,6 +17,11 @@ struct InfixTests {
     int64_t rightValue;
 };
 
+struct TestCase {
+    std::string input;
+    std::string expected;
+};
+
 // Helper function to test let statement
 bool testLetStatement(Statement* s, const std::string& name) {
     if (s->TokenLiteral() != "let") {
@@ -264,6 +269,75 @@ TEST(ParserTest, TestParsingInfixExpressions) {
             << "exp.Operator is not" << tt.operator_ << ". got=" << exp->Operator;
 
         EXPECT_TRUE(testIntegerLiteral(exp->Right.get(), tt.rightValue));
+    }
+}
+
+TEST(ParserTest, TestOperatorPrecedenceParsing) {
+    std::vector<TestCase> tests = {
+        {
+            "-a * b",
+            "((-a) * b)",
+        },
+        {
+            "!-a",
+            "(!(-a))",
+        },
+        {
+            "a + b + c",
+            "((a + b) + c)",
+        },
+        {
+            "a + b - c",
+            "((a + b) - c)",
+        },
+        {
+            "a * b * c",
+            "((a * b) * c)",
+        },
+        {
+            "a * b / c",
+            "((a * b) / c)",
+        },
+        {
+            "a + b / c",
+            "(a + (b / c))",
+        },
+        {
+            "a + b * c + d / e - f",
+            "(((a + (b * c)) + (d / e)) - f)",
+        },
+        {
+            "3 + 4; -5 * 5",
+            "(3 + 4)((-5) * 5)",
+        },
+        {
+            "5 > 4 == 3 < 4",
+            "((5 > 4) == (3 < 4))",
+        },
+        {
+            "5 < 4 != 3 > 4",
+            "((5 < 4) != (3 > 4))",
+        },
+        {
+            "3 + 4 * 5 == 3 * 1 + 4 * 5",
+            "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
+        },
+        {
+            "3 + 4 * 5 == 3 * 1 + 4 * 5",
+            "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
+        },
+    };
+
+    for (const auto& tt : tests) {
+        auto l = std::make_unique<Lexer>(tt.input);
+        Parser p(std::move(l));
+        auto program = p.ParseProgram();
+        checkParserErrors(&p);
+
+        std::string actual = program->String();
+
+        EXPECT_EQ(tt.expected, actual)
+            << "expected " << tt.expected << " got=" << actual;
     }
 }
 
