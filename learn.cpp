@@ -1,6 +1,26 @@
 #include<iostream>
 #include<memory>
 
+
+class statement { };
+
+class exprStmt : public statement { };
+
+class Parser {
+public:
+    std::unique_ptr<statement> parseExpr() {
+        return parseExprStmt();
+    }
+
+    std::unique_ptr<exprStmt> parseExprStmt() {
+        auto stmt = std::make_unique<exprStmt>();
+        return stmt;
+    }
+
+};
+
+
+
 class Lexer {
 public:
     std::unique_ptr<Lexer> a;
