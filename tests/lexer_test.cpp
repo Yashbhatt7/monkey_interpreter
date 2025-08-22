@@ -56,12 +56,12 @@ TEST(LexerTest, NextTokenFullTest) {
         {TokenType::Comma, ","},
         {TokenType::Ident, "y"},
         {TokenType::RParen, ")"},
-        {TokenType::LSquarly, "{"},
+        {TokenType::LSquirly, "{"},
         {TokenType::Ident, "x"},
         {TokenType::Plus, "+"},
         {TokenType::Ident, "y"},
         {TokenType::Semicolon, ";"},
-        {TokenType::RSquarly, "}"},
+        {TokenType::RSquirly, "}"},
         {TokenType::Semicolon, ";"},
         {TokenType::Let, "let"},
         {TokenType::Ident, "result"},
@@ -98,17 +98,17 @@ TEST(LexerTest, NextTokenFullTest) {
         {TokenType::Lt, "<"},
         {TokenType::Int, "10"},
         {TokenType::RParen, ")"},
-        {TokenType::LSquarly, "{"},
+        {TokenType::LSquirly, "{"},
         {TokenType::Return, "return"},
         {TokenType::True, "true"},
         {TokenType::Semicolon, ";"},
-        {TokenType::RSquarly, "}"},
+        {TokenType::RSquirly, "}"},
         {TokenType::Else, "else"},
-        {TokenType::LSquarly, "{"},
+        {TokenType::LSquirly, "{"},
         {TokenType::Return, "return"},
         {TokenType::False, "false"},
         {TokenType::Semicolon, ";"},
-        {TokenType::RSquarly, "}"},
+        {TokenType::RSquirly, "}"},
         // 10 == 10;
         // 10 != 9;
         {TokenType::Int, "10"},
@@ -140,3 +140,4 @@ TEST(LexerTest, NextTokenFullTest) {
             << tests[i].expectedLiteral << "', got: '" << tok.literal << "'";
     }
 }
+
