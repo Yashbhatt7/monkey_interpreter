@@ -3,6 +3,7 @@
 
 #include<sstream>
 #include<functional>
+#include<chrono>
 #include "ast.hpp"
 #include "lexer.hpp"
 #include "token.hpp"
@@ -59,6 +60,26 @@ public:
 
     void registerPrefix(TokenType tokenType, prefixParseFn);
     void registerInfix(TokenType tokenType, infixParseFn);
+};
+
+// Tracer functions
+static int trace_level = 0;
+std::string get_indent();
+void trace(const std::string& name);
+void untrace(const std::string& name);
+
+class Trace {
+private:
+    std::string function_name;
+
+public:
+    explicit Trace(const std::string& name) : function_name(name) {
+        trace(name);
+    }
+
+    ~Trace() {
+        untrace(function_name);
+    }
 };
 
 #endif // PARSER_HPP

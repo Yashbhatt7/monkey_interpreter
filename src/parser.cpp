@@ -49,6 +49,7 @@ std::unique_ptr<Expression> Parser::parseIdentifier() {
 }
 
 std::unique_ptr<Expression> Parser::parseIntegerLiteral() {
+    Trace trace("parseIntegerLiteral");
     auto lit = std::make_unique<IntegerLiteral>();
     lit->token = curToken;
     // std::cout << "CURTOKEN IS: " << curToken.literal << "\n";
@@ -56,6 +57,7 @@ std::unique_ptr<Expression> Parser::parseIntegerLiteral() {
     std::stringstream ss(curToken.literal);
     int64_t value;
 
+    // Here operator >> is an stream extraction operator to extract the value from ss to value
     if (!(ss >> value) || !ss.eof()) {
         std::string msg = "could not parse \"" + curToken.literal + "\" as integer";
         errors.push_back(msg);
@@ -68,6 +70,7 @@ std::unique_ptr<Expression> Parser::parseIntegerLiteral() {
 }
 
 std::unique_ptr<Expression> Parser::parsePrefixExpression() {
+    Trace trace("parsePrefixExpression");
     auto expression = std::make_unique<PrefixExpression>();
     expression->token = curToken;
     expression->Operator = curToken.literal;
@@ -80,6 +83,7 @@ std::unique_ptr<Expression> Parser::parsePrefixExpression() {
 }
 
 std::unique_ptr<Expression> Parser::parseInfixExpression(std::unique_ptr<Expression> left) {
+    Trace trace("parseInfixExpression");
     auto expression = std::make_unique<InfixExpression>();
     expression->token = curToken;
     // std::cout << "curToken for infixExpression method is: " << curToken.literal << "\n";
@@ -91,6 +95,14 @@ std::unique_ptr<Expression> Parser::parseInfixExpression(std::unique_ptr<Express
     // std::cout << "in between left and right: " << curToken.literal << "\n";
     nextToken();
     expression->Right = parseExpression(precedence);
+
+    // For demonstration purpose
+    // if (expression->Operator == "+") {
+    //     expression->Right = parseExpression(precedence - 1);
+    // } else {
+    //     expression->Right = parseExpression(precedence);
+    // }
+
     // std::cout << "Right in infixExpression method: " << expression->Right->TokenLiteral() << "\n";
 
     return expression;
@@ -167,6 +179,7 @@ std::unique_ptr<ReturnStatement> Parser::parseReturnStatement() {
 }
 
 std::unique_ptr<ExpressionStatement> Parser::parseExpressionStatement() {
+    Trace trace("parseExpressionStatement");
     auto stmt = std::make_unique<ExpressionStatement>();
     stmt->token = curToken;
     // std::cout << "curToken is: " << curToken.literal << "\n";
@@ -180,7 +193,11 @@ std::unique_ptr<ExpressionStatement> Parser::parseExpressionStatement() {
     return stmt;
 }
 
+// so if the Left-Binding-Power is greater than the Right-Binding-Power
+// then Left-Binding-Power of the operator(peekOperator in this case)
+// "sucks in" what we parsed so far and uses it as the "left arm" of the AST node it is constructing
 std::unique_ptr<Expression> Parser::parseExpression(int precedence) {
+    Trace trace("parseExpression");
     auto prefixItr = prefixParseFns.find(curToken.type);
     // std::cout << "curToken for parseExpression method is: " << curToken.literal << "\n";
     if (prefixItr == prefixParseFns.end()) {
@@ -191,6 +208,7 @@ std::unique_ptr<Expression> Parser::parseExpression(int precedence) {
     prefixParseFn prefix = prefixItr->second;
     std::unique_ptr<Expression> leftExp = prefix();
 
+    // Left-Binding-Power ->> peekPrecedence() > Right-Binding-Power ->> precedence
     while (!peekTokenIs(TokenType::Semicolon) && precedence < peekPrecedence()) {
         auto infixItr = infixParseFns.find(peekToken.type);
         // std::cout << "peekToken type for precedence check: " << peekToken.literal << "\n";
@@ -202,36 +220,10 @@ std::unique_ptr<Expression> Parser::parseExpression(int precedence) {
 
         nextToken();
         leftExp = infix(std::move(leftExp));
-        std::cout << "leftExp: " << leftExp->TokenLiteral() << "\n";
+        // std::cout << "leftExp: " << leftExp->TokenLiteral() << "\n";
     }
 
     return leftExp;
-}
-
-void Parser::registerPrefix(TokenType tokenType, prefixParseFn fn) {
-    prefixParseFns[tokenType] = fn;
-}
-
-void Parser::registerInfix(TokenType tokenType, infixParseFn fn) {
-    infixParseFns[tokenType] = fn;
-}
-
-bool Parser::expectPeek(TokenType t) {
-    if (peekTokenIs(t)) {
-        nextToken();
-        return true;
-    } else {
-        peekErrors(t);
-        return false;
-    }
-}
-
-bool Parser::curTokenIs(TokenType t) {
-    return curToken.type == t;
-}
-
-bool Parser::peekTokenIs(TokenType t) {
-    return peekToken.type == t;
 }
 
 int Parser::peekPrecedence() {
@@ -253,6 +245,24 @@ int Parser::curPrecedence() {
     return static_cast<int>(Precedence::LOWEST);
 }
 
+bool Parser::expectPeek(TokenType t) {
+    if (peekTokenIs(t)) {
+        nextToken();
+        return true;
+    } else {
+        peekErrors(t);
+        return false;
+    }
+}
+
+bool Parser::curTokenIs(TokenType t) {
+    return curToken.type == t;
+}
+
+bool Parser::peekTokenIs(TokenType t) {
+    return peekToken.type == t;
+}
+
 void Parser::peekErrors(TokenType t) {
     std::ostringstream oss;
     oss << "expected next token to be " << TokenTypeMap::tokenTypeToString(t)
@@ -268,6 +278,29 @@ void Parser::noPrefixParseFnError(TokenType t) {
 
 std::vector<std::string> Parser::Errors() {
     return errors;
+}
+
+void Parser::registerPrefix(TokenType tokenType, prefixParseFn fn) {
+    prefixParseFns[tokenType] = fn;
+}
+
+void Parser::registerInfix(TokenType tokenType, infixParseFn fn) {
+    infixParseFns[tokenType] = fn;
+}
+
+// Tracer functions
+std::string get_indent() {
+    return std::string(trace_level * 2, ' ');
+}
+
+void trace(const std::string& name) {
+    std::cout << get_indent() << "BEGIN " << name << "\n";
+    ++trace_level;
+}
+
+void untrace(const std::string& name) {
+    --trace_level;
+    std::cout << get_indent() << "END " << name << "\n";
 }
 
 
