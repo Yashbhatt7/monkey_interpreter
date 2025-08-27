@@ -1,3 +1,4 @@
+#include <cstdint>
 #include<gtest/gtest.h>
 #include <memory>
 #include "../src/lexer.hpp"
@@ -64,6 +65,67 @@ bool testIntegerLiteral(Expression* il, int64_t value) {
     std::string expectedLiteral = std::to_string(value);
     if (integ->TokenLiteral() != expectedLiteral) {
         ADD_FAILURE() << "integ.TokenLiteral not " << value << ". got=" << integ->TokenLiteral();
+        return false;
+    }
+
+    return true;
+}
+
+bool testIdentifier(Expression* exp, const std::string& value) {
+    auto ident = dynamic_cast<Identifier*> (exp);
+    if (!ident) {
+        ADD_FAILURE() << "exp not Identifier. got=" << typeid(*exp).name();
+        return false;
+    }
+
+    if (ident->Value != value) {
+        ADD_FAILURE() << "ident.Value not " << value << ". got=" << ident->Value;
+        return false;
+    }
+
+    if (ident->TokenLiteral() != value) {
+        ADD_FAILURE() << "ident.TokenLiteral not " << value << ". got=" << ident->TokenLiteral();
+        return false;
+    }
+
+    return true;
+}
+
+using LiteralValue = std::variant<int, int64_t, std::string>;
+bool testLiteralExpression(Expression* exp, const LiteralValue& expected) {
+    return std::visit([exp](const auto& value) -> bool {
+        using T = std::decay_t<decltype(value)>;
+        if constexpr (std::is_same_v<T, int>) {
+            return testIntegerLiteral(exp, static_cast<int64_t>(value));
+        } else if constexpr (std::is_same_v<T, int64_t>) {
+            return testIntegerLiteral(exp, value);
+        } else if constexpr (std::is_same_v<T, std::string>) {
+            return testIdentifier(exp, value);
+        } else {
+            ADD_FAILURE() << "type of expected not handled. got=" << typeid(T).name();
+            return false;
+        }
+    }, expected);
+}
+
+template<typename LeftType, typename RightType>
+bool testInfixExpression(Expression* exp, const LeftType& left, const std::string& operator_str, const RightType& right) {
+    InfixExpression* opExp = dynamic_cast<InfixExpression*> (exp);
+    if (!opExp) {
+        ADD_FAILURE() << "exp is not InfixExpression. got=" << typeid(*exp).name() << "(" << exp->String() << ")";
+        return false;
+    }
+
+    if (!testLiteralExpression(opExp->Left.get(), left)) {
+        return false;
+    }
+
+    if (opExp->Operator != operator_str) {
+        ADD_FAILURE() << "exp.Operator is not '" << operator_str << "'. got=" << opExp->Operator;
+        return false;
+    }
+
+    if (!testLiteralExpression(opExp->Right.get(), right)) {
         return false;
     }
 
