@@ -22,6 +22,9 @@ Parser::Parser(std::unique_ptr<Lexer> lexer)
     registerPrefix(TokenType::Bang, [this]() { return parsePrefixExpression(); });
     registerPrefix(TokenType::Minus, [this]() { return parsePrefixExpression(); });
 
+    registerPrefix(TokenType::True, [this]() { return parseBoolean(); });
+    registerPrefix(TokenType::False, [this]() { return parseBoolean(); });
+
     registerInfix(TokenType::Plus, [this](std::unique_ptr<Expression> left) { return parseInfixExpression(std::move(left)); });
     registerInfix(TokenType::Minus, [this](std::unique_ptr<Expression> left) { return parseInfixExpression(std::move(left)); });
     registerInfix(TokenType::Slash, [this](std::unique_ptr<Expression> left) { return parseInfixExpression(std::move(left)); });
@@ -48,8 +51,17 @@ std::unique_ptr<Expression> Parser::parseIdentifier() {
     return ident;
 }
 
+std::unique_ptr<Expression> Parser::parseBoolean() {
+    // Trace trace("parseBoolean");
+    auto boolean = std::make_unique<Boolean>();
+    boolean->token = curToken;
+    boolean->Value = curTokenIs(TokenType::True);
+
+    return boolean;
+}
+
 std::unique_ptr<Expression> Parser::parseIntegerLiteral() {
-    Trace trace("parseIntegerLiteral");
+    // Trace trace("parseIntegerLiteral");
     auto lit = std::make_unique<IntegerLiteral>();
     lit->token = curToken;
     // std::cout << "CURTOKEN IS: " << curToken.literal << "\n";
@@ -70,7 +82,7 @@ std::unique_ptr<Expression> Parser::parseIntegerLiteral() {
 }
 
 std::unique_ptr<Expression> Parser::parsePrefixExpression() {
-    Trace trace("parsePrefixExpression");
+    // Trace trace("parsePrefixExpression");
     auto expression = std::make_unique<PrefixExpression>();
     expression->token = curToken;
     expression->Operator = curToken.literal;
@@ -83,7 +95,7 @@ std::unique_ptr<Expression> Parser::parsePrefixExpression() {
 }
 
 std::unique_ptr<Expression> Parser::parseInfixExpression(std::unique_ptr<Expression> left) {
-    Trace trace("parseInfixExpression");
+    // Trace trace("parseInfixExpression");
     auto expression = std::make_unique<InfixExpression>();
     expression->token = curToken;
     // std::cout << "curToken for infixExpression method is: " << curToken.literal << "\n";
@@ -179,7 +191,7 @@ std::unique_ptr<ReturnStatement> Parser::parseReturnStatement() {
 }
 
 std::unique_ptr<ExpressionStatement> Parser::parseExpressionStatement() {
-    Trace trace("parseExpressionStatement");
+    // Trace trace("parseExpressionStatement");
     auto stmt = std::make_unique<ExpressionStatement>();
     stmt->token = curToken;
     // std::cout << "curToken is: " << curToken.literal << "\n";
@@ -197,7 +209,7 @@ std::unique_ptr<ExpressionStatement> Parser::parseExpressionStatement() {
 // then Left-Binding-Power of the operator(peekOperator in this case)
 // "sucks in" what we parsed so far and uses it as the "left arm" of the AST node it is constructing
 std::unique_ptr<Expression> Parser::parseExpression(int precedence) {
-    Trace trace("parseExpression");
+    // Trace trace("parseExpression");
     auto prefixItr = prefixParseFns.find(curToken.type);
     // std::cout << "curToken for parseExpression method is: " << curToken.literal << "\n";
     if (prefixItr == prefixParseFns.end()) {
