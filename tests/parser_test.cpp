@@ -23,6 +23,11 @@ struct TestCase {
     std::string expected;
 };
 
+struct TestCs {
+    std::string input;
+    bool expectedBoolean;
+};
+
 // Helper function to test let statement
 bool testLetStatement(Statement* s, const std::string& name) {
     if (s->TokenLiteral() != "let") {
@@ -388,6 +393,22 @@ TEST(ParserTest, TestOperatorPrecedenceParsing) {
             "3 + 4 * 5 == 3 * 1 + 4 * 5",
             "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
         },
+        {
+            "true",
+            "true",
+        },
+        {
+            "false",
+            "false",
+        },
+        {
+            "3 > 5 == false",
+            "((3 > 5) == false)",
+        },
+        {
+            "3 < 5 == true",
+            "((3 < 5) == true)",
+        },
     };
 
     for (const auto& tt : tests) {
@@ -400,6 +421,34 @@ TEST(ParserTest, TestOperatorPrecedenceParsing) {
 
         EXPECT_EQ(tt.expected, actual)
             << "expected " << tt.expected << " got=" << actual;
+    }
+}
+
+TEST(ParserTest, TestBooleanExpression) {
+    std::vector<TestCs> tests = {
+        { "true", true },
+        { "false", false },
+    };
+
+    for (const auto& tt : tests) {
+        auto l = std::make_unique<Lexer>(tt.input);
+        Parser p(std::move(l));
+        auto program = p.ParseProgram();
+        checkParserErrors(&p);
+
+        ASSERT_EQ(program->Statements.size(), 1)
+            << "prgram.Statements does not contain 1 statements. got=" << program->Statements.size();
+
+        auto stmt = dynamic_cast<ExpressionStatement*>(program->Statements[0].get());
+        ASSERT_NE(stmt, nullptr)
+            << "program.Statements[0] is not ExpressionStatement";
+
+        auto exp = dynamic_cast<Boolean*>(stmt->Expression.get());
+        ASSERT_NE(exp, nullptr)
+            << "exp is not Boolean. got=";
+
+        EXPECT_EQ(exp->Value, tt.expectedBoolean)
+            << "exp.Value is not" << tt.expectedBoolean << ". got=" << exp->Value;
     }
 }
 
