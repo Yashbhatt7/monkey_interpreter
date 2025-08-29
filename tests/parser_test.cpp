@@ -1,21 +1,24 @@
-#include <cstdint>
+#include<cstdint>
 #include<gtest/gtest.h>
-#include <memory>
+#include<memory>
+#include<variant>
 #include "../src/lexer.hpp"
 #include "../src/ast.hpp"
 #include "../src/parser.hpp"
 
+using Value = std::variant<int, int64_t, std::string, bool>;
 struct PrefixTests {
     std::string input;
     std::string operator_;
-    int64_t integerValue;
+    Value integerValue;
 };
 
+using Value = std::variant<int, int64_t, std::string, bool>;
 struct InfixTests {
     std::string input;
-    int64_t leftValue;
+    Value leftValue;
     std::string operator_;
-    int64_t rightValue;
+    Value rightValue;
 };
 
 struct TestCase {
@@ -96,7 +99,30 @@ bool testIdentifier(Expression* exp, const std::string& value) {
     return true;
 }
 
-using LiteralValue = std::variant<int, int64_t, std::string>;
+bool testBooleanLiteral(Expression* exp, bool value) {
+    Boolean* boolean = dynamic_cast<Boolean*>(exp);
+    if (!boolean) {
+        ADD_FAILURE() << "exp not Boolean. got=" << typeid(*exp).name();
+        return false;
+    }
+
+    if (boolean->Value != value) {
+        ADD_FAILURE() << "bo.Value not " << (value ? "true" : "false")
+            << ". got=" << (boolean->Value ? "true" : "false");
+        return false;
+    }
+
+    std::string expectedLiteral = value ? "true" : "false";
+    if (boolean->TokenLiteral() != expectedLiteral) {
+        ADD_FAILURE() << "boolean.TokenLiteral not " << expectedLiteral
+            << ". got=" << boolean->TokenLiteral();
+        return false;
+    }
+
+    return true;
+}
+
+using LiteralValue = std::variant<int, int64_t, std::string, bool>;
 bool testLiteralExpression(Expression* exp, const LiteralValue& expected) {
     return std::visit([exp](const auto& value) -> bool {
         using T = std::decay_t<decltype(value)>;
@@ -106,6 +132,8 @@ bool testLiteralExpression(Expression* exp, const LiteralValue& expected) {
             return testIntegerLiteral(exp, value);
         } else if constexpr (std::is_same_v<T, std::string>) {
             return testIdentifier(exp, value);
+        } else if constexpr (std::is_same_v<T, bool>) {
+            return testBooleanLiteral(exp, value);
         } else {
             ADD_FAILURE() << "type of expected not handled. got=" << typeid(T).name();
             return false;
@@ -273,8 +301,10 @@ TEST(ParserTest, TestIntegerLiteralExpression) {
 
 TEST(ParserTest, TestParsingPrefixExpressions) {
     std::vector<PrefixTests> prefixTests {
-        {"!5;", "!", 5},
-        {"-15;", "-", 15},
+        { "!5;", "!", 5 },
+        { "-15;", "-", 15 },
+        { "!true;", "!", true },
+        { "!false", "!", false },
     };
 
     for (const auto& tt :prefixTests) {
@@ -297,20 +327,23 @@ TEST(ParserTest, TestParsingPrefixExpressions) {
         EXPECT_EQ(exp->Operator, tt.operator_)
             << "exp.Operator is not" << tt.operator_ << ". got=" << exp->Operator;
 
-        EXPECT_TRUE(testIntegerLiteral(exp->Right.get(), tt.integerValue));
+        EXPECT_TRUE(testLiteralExpression(exp->Right.get(), tt.integerValue));
     }
 }
 
 TEST(ParserTest, TestParsingInfixExpressions) {
     std::vector<InfixTests> infixTests {
-        {"5 + 4;", 5, "+", 4},
-        {"5 - 4;", 5, "-", 4},
-        {"5 * 4;", 5, "*", 4},
-        {"5 / 4;", 5, "/", 4},
-        {"5 > 4;", 5, ">", 4},
-        {"5 < 4;", 5, "<", 4},
-        {"5 == 4;", 5, "==", 4},
-        {"5 != 4;", 5, "!=", 4},
+        { "5 + 4;", 5, "+", 4 },
+        { "5 - 4;", 5, "-", 4 },
+        { "5 * 4;", 5, "*", 4 },
+        { "5 / 4;", 5, "/", 4 },
+        { "5 > 4;", 5, ">", 4 },
+        { "5 < 4;", 5, "<", 4 },
+        { "5 == 4;", 5, "==", 4 },
+        { "5 != 4;", 5, "!=", 4 },
+        { "true == true", true, "==", true },
+        { "true != false", true, "!=", false },
+        { "false == false", false, "==", false },
     };
 
     for (const auto& tt : infixTests) {
@@ -330,12 +363,15 @@ TEST(ParserTest, TestParsingInfixExpressions) {
         ASSERT_NE(exp, nullptr)
             << "exp is not InfixExpression";
 
-        EXPECT_TRUE(testIntegerLiteral(exp->Left.get(), tt.leftValue));
+        EXPECT_TRUE(testLiteralExpression(exp->Left.get(), tt.leftValue))
+            << "Failed testing left operand for input: " << tt.input;
+
 
         EXPECT_EQ(exp->Operator, tt.operator_)
             << "exp.Operator is not" << tt.operator_ << ". got=" << exp->Operator;
 
-        EXPECT_TRUE(testIntegerLiteral(exp->Right.get(), tt.rightValue));
+        EXPECT_TRUE(testLiteralExpression(exp->Right.get(), tt.rightValue))
+            << "Failed testing right operand for input: " << tt.input;
     }
 }
 
