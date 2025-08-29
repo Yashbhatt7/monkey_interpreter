@@ -118,4 +118,14 @@ public:
     std::string String() const override;
 };
 
+class Boolean : public Expression {
+public:
+    Token token;
+    bool Value;
+
+    void expressionNode() override {}
+    std::string TokenLiteral() const override;
+    std::string String() const override;
+};
+
 #endif // AST_HPP
