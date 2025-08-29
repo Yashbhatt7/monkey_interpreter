@@ -38,6 +38,10 @@ std::string InfixExpression::TokenLiteral() const {
     return token.literal;
 }
 
+std::string Boolean::TokenLiteral() const {
+    return token.literal;
+}
+
 std::string Program::String() const {
     std::ostringstream out;
     for (const auto& s : Statements) {
@@ -114,5 +118,9 @@ std::string InfixExpression::String() const {
     out << ")";
 
     return out.str();
+}
+
+std::string Boolean::String() const {
+    return token.literal;
 }
 
