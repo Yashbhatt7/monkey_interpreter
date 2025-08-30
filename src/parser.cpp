@@ -21,6 +21,7 @@ Parser::Parser(std::unique_ptr<Lexer> lexer)
 
     registerPrefix(TokenType::Bang, [this]() { return parsePrefixExpression(); });
     registerPrefix(TokenType::Minus, [this]() { return parsePrefixExpression(); });
+    registerPrefix(TokenType::LParen, [this]() { return parseGroupedExpression(); });
 
     registerPrefix(TokenType::True, [this]() { return parseBoolean(); });
     registerPrefix(TokenType::False, [this]() { return parseBoolean(); });
@@ -58,6 +59,18 @@ std::unique_ptr<Expression> Parser::parseBoolean() {
     boolean->Value = curTokenIs(TokenType::True);
 
     return boolean;
+}
+
+std::unique_ptr<Expression> Parser::parseGroupedExpression() {
+    nextToken();
+
+    auto exp = parseExpression(static_cast<int>(Precedence::LOWEST));
+
+    if (!expectPeek(TokenType::RParen)) {
+        return nullptr;
+    }
+
+    return exp;
 }
 
 std::unique_ptr<Expression> Parser::parseIntegerLiteral() {
@@ -120,7 +133,7 @@ std::unique_ptr<Expression> Parser::parseInfixExpression(std::unique_ptr<Express
     return expression;
 }
 
-// <==----------------------------------From here parser starts parsing the program-----------------------------------------==>
+// <<- ----------------------------------From here parser starts parsing the program------------------------------------------ ->>
 std::unique_ptr<Program> Parser::ParseProgram() {
     auto program = std::make_unique<Program>();
 
