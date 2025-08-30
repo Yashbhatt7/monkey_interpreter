@@ -45,6 +45,7 @@ public:
     std::unique_ptr<Expression> parsePrefixExpression();
     std::unique_ptr<Expression> parseInfixExpression(std::unique_ptr<Expression> left);
     std::unique_ptr<Expression> parseBoolean();
+    std::unique_ptr<Expression> parseGroupedExpression();
     void nextToken();
     std::vector<std::string> Errors();
     void noPrefixParseFnError(TokenType t);
