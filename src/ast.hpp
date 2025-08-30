@@ -128,4 +128,26 @@ public:
     std::string String() const override;
 };
 
+class BlockStatement : public Statement {
+public:
+    Token token;
+    std::vector<std::unique_ptr<Statement>> Statements;
+
+    void statementNode() override {}
+    std::string TokenLiteral() const override;
+    std::string String() const override;
+};
+
+class IfExpression : public Expression {
+public:
+    Token token;
+    std::unique_ptr<Expression> Condition;
+    std::unique_ptr<BlockStatement> Consequence;
+    std::unique_ptr<BlockStatement> Alternative;
+
+    void expressionNode() override {}
+    std::string TokenLiteral() const override;
+    std::string String() const override;
+};
+
 #endif // AST_HPP
