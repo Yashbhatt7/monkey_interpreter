@@ -42,6 +42,14 @@ std::string Boolean::TokenLiteral() const {
     return token.literal;
 }
 
+std::string IfExpression::TokenLiteral() const {
+    return token.literal;
+}
+
+std::string BlockStatement::TokenLiteral() const {
+    return token.literal;
+}
+
 std::string Program::String() const {
     std::ostringstream out;
     for (const auto& s : Statements) {
@@ -122,5 +130,31 @@ std::string InfixExpression::String() const {
 
 std::string Boolean::String() const {
     return token.literal;
+}
+
+std::string IfExpression::String() const {
+    std::ostringstream out;
+
+    out << "if";
+    out << Condition->String();
+    out << " ";
+    out << Consequence->String();
+
+    if (Alternative != nullptr) {
+        out << "else ";
+        out << Alternative->String();
+    }
+
+    return out.str();
+}
+
+std::string BlockStatement::String() const {
+    std::ostringstream out;
+
+    for (const auto& s : Statements) {
+        out << s->String();
+    }
+
+    return out.str();
 }
 
