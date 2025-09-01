@@ -19,6 +19,8 @@ Parser::Parser(std::unique_ptr<Lexer> lexer)
     registerPrefix(TokenType::Ident, [this]() { return parseIdentifier(); });
     registerPrefix(TokenType::Int, [this]() { return parseIntegerLiteral(); });
 
+    registerPrefix(TokenType::If, [this]() { return parseIfExpression(); });
+
     registerPrefix(TokenType::Bang, [this]() { return parsePrefixExpression(); });
     registerPrefix(TokenType::Minus, [this]() { return parsePrefixExpression(); });
     registerPrefix(TokenType::LParen, [this]() { return parseGroupedExpression(); });
@@ -71,6 +73,30 @@ std::unique_ptr<Expression> Parser::parseGroupedExpression() {
     }
 
     return exp;
+}
+
+std::unique_ptr<Expression> Parser::parseIfExpression() {
+    auto expression = std::make_unique<IfExpression>();
+    expression->token = curToken;
+
+    if (!expectPeek(TokenType::LParen)) {
+        return nullptr;
+    }
+
+    nextToken();
+    expression->Condition = parseExpression(static_cast<int>(Precedence::LOWEST));
+
+    if (!expectPeek(TokenType::RParen)) {
+        return nullptr;
+    }
+
+    if (!expectPeek(TokenType::LSquirly)) {
+        return nullptr;
+    }
+
+    expression->Consequence = parseBlockStatement();
+
+    return expression;
 }
 
 std::unique_ptr<Expression> Parser::parseIntegerLiteral() {
@@ -249,6 +275,23 @@ std::unique_ptr<Expression> Parser::parseExpression(int precedence) {
     }
 
     return leftExp;
+}
+
+std::unique_ptr<BlockStatement> Parser::parseBlockStatement() {
+    auto block = std::make_unique<BlockStatement>();
+
+    nextToken();
+
+    while (!curTokenIs(TokenType::RSquirly) && !curTokenIs(TokenType::Eof)) {
+        auto stmt = parseStatement();
+
+        if (stmt != nullptr) {
+            block->Statements.push_back(std::move(stmt));
+        }
+        nextToken();
+    }
+
+    return block;
 }
 
 int Parser::peekPrecedence() {
