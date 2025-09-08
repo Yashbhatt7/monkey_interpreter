@@ -50,6 +50,10 @@ std::string BlockStatement::TokenLiteral() const {
     return token.literal;
 }
 
+std::string FunctionLiteral::TokenLiteral() const {
+    return token.literal;
+}
+
 std::string Program::String() const {
     std::ostringstream out;
     for (const auto& s : Statements) {
@@ -154,6 +158,30 @@ std::string BlockStatement::String() const {
     for (const auto& s : Statements) {
         out << s->String();
     }
+
+    return out.str();
+}
+
+std::string FunctionLiteral::String() const {
+    std::ostringstream out;
+    std::vector<std::string> params;
+
+    for (const auto& p : Parameters) {
+        params.push_back(p->String());
+    }
+
+    out << TokenLiteral();
+    out << "(";
+
+    for (size_t i = 0; i < params.size(); ++i) {
+        if (i > 0) {
+            out << ", ";
+        }
+        out << params[i];
+    }
+
+    out << ")";
+    out << Body->String();
 
     return out.str();
 }
