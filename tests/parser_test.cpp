@@ -508,7 +508,7 @@ TEST(ParserTest, TestBooleanExpression) {
     }
 }
 
-TEST(ParseTest, TestIfExpression) {
+TEST(ParserTest, TestIfExpression) {
     std::string input = R"(
         if (x < y) { x }
     )";
@@ -544,5 +544,89 @@ TEST(ParseTest, TestIfExpression) {
 
     EXPECT_EQ(exp->Alternative, nullptr)
         << "exp.Alternative.Statements was not nil. got=" << exp->Alternative.get();
+}
+
+TEST(ParserTest, TestIfElseExpression) {
+    std::string input = R"(
+        if (x < y) { x } else { y }
+    )";
+
+    auto l = std::make_unique<Lexer>(input);
+    Parser p(std::move(l));
+    auto program = p.ParseProgram();
+    checkParserErrors(&p);
+
+    ASSERT_EQ(program->Statements.size(), 1)
+        << "program.Body does not contain 1 statements. got=" << program->Statements.size();
+
+    auto stmt = dynamic_cast<ExpressionStatement*>(program->Statements[0].get());
+    ASSERT_TRUE(stmt != nullptr)
+        << "program.Statements[0] is not ExpressionStatement";
+
+    auto exp = dynamic_cast<IfExpression*>(stmt->Expression.get());
+    ASSERT_TRUE(exp != nullptr)
+        << "stmt.Expression is not IfExpression.";
+
+    EXPECT_TRUE(testInfixExpression(exp->Condition.get(), "x", "<", "y"))
+        << "Failed Testing";
+
+    ASSERT_EQ(exp->Consequence->Statements.size(), 1)
+        << "consequence is not 1 statements. got=" << exp->Consequence->Statements.size();
+
+    auto consequence = dynamic_cast<ExpressionStatement*>(exp->Consequence->Statements[0].get());
+    ASSERT_TRUE(consequence != nullptr)
+        << "Statements[0] is not ExpressionStatement";
+
+    EXPECT_TRUE(testIdentifier(consequence->Expression.get(), "x"))
+        << "Failed Testing";
+
+    ASSERT_TRUE(exp->Alternative != nullptr)
+        << "exp.Alternative is null";
+
+    ASSERT_EQ(exp->Alternative->Statements.size(), 1)
+        << "exp.Alternative.Statements does not contain 1 statements";
+
+    auto alternative = dynamic_cast<ExpressionStatement*>(exp->Alternative->Statements[0].get());
+    ASSERT_TRUE(alternative != nullptr)
+        << "Statements[0] is not ExpressionStatement";
+
+    EXPECT_TRUE(testIdentifier(alternative->Expression.get(), "y"))
+        << "Failed Testing";
+}
+
+TEST(ParserTest, TestFunctionLiteralParsing) {
+    std::string input = "fn(x, y) { x + y; }";
+
+    auto l = std::make_unique<Lexer>(input);
+    Parser p(std::move(l));
+    auto program = p.ParseProgram();
+    checkParserErrors(&p);
+
+    ASSERT_EQ(program->Statements.size(), 1)
+        << "program.Body does not contain 1 statements. got=" << program->Statements.size();
+
+    auto stmt = dynamic_cast<ExpressionStatement*>(program->Statements[0].get());
+    ASSERT_NE(stmt, nullptr)
+        << "program.Statements[0] is not ExpressionStatement.";
+
+    auto function = dynamic_cast<FunctionLiteral*>(stmt->Expression.get());
+    ASSERT_NE(function, nullptr)
+        << "stmt.Expression is not FunctionLiteral.";
+
+    ASSERT_EQ(function->Parameters.size(), 2)
+        << "function literal parameters wrong. want 2, got=" << function->Parameters.size();
+
+    testLiteralExpression(function->Parameters[0].get(), "x");
+    testLiteralExpression(function->Parameters[1].get(), "y");
+
+    ASSERT_EQ(function->Body->Statements.size(), 1)
+        << "function.Body.Statements has not 1 statements. got="
+        << function->Body->Statements.size();
+
+    auto bodyStmt = dynamic_cast<ExpressionStatement*>(function->Body->Statements[0].get());
+    ASSERT_NE(bodyStmt, nullptr)
+        << "function body stmt is not ExpressionStatement.";
+
+    testInfixExpression(bodyStmt->Expression.get(), "x", "+", "y");
 }
 
