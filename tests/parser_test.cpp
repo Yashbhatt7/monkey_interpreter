@@ -630,3 +630,37 @@ TEST(ParserTest, TestFunctionLiteralParsing) {
     testInfixExpression(bodyStmt->Expression.get(), "x", "+", "y");
 }
 
+TEST(ParserTest, FunctionParameterParsing) {
+    struct TestCase {
+        std::string input;
+        std::vector<std::string> expectedParams;
+    };
+
+    std::vector<TestCase> tests = {
+        {"fn() {};", {}},
+        {"fn(x) {};", {"x"}},
+        {"fn(x, y, z) {};", {"x", "y", "z"}}
+    };
+
+    for (const auto& tt : tests) {
+        auto lexer = std::make_unique<Lexer>(tt.input);
+        Parser p(std::move(lexer));
+        auto program = p.ParseProgram();
+
+        checkParserErrors(&p);
+
+        auto stmt = dynamic_cast<ExpressionStatement*>(program->Statements[0].get());
+        ASSERT_NE(stmt, nullptr);
+
+        auto function = dynamic_cast<FunctionLiteral*>(stmt->Expression.get());
+        ASSERT_NE(function, nullptr);
+
+        EXPECT_EQ(function->Parameters.size(), tt.expectedParams.size())
+            << "Parameter count mismatch for input: " << tt.input;
+
+        for (size_t i = 0; i < tt.expectedParams.size(); ++i) {
+            testLiteralExpression(function->Parameters[i].get(), tt.expectedParams[i]);
+        }
+    }
+}
+
