@@ -20,6 +20,7 @@ Parser::Parser(std::unique_ptr<Lexer> lexer)
     registerPrefix(TokenType::Int, [this]() { return parseIntegerLiteral(); });
 
     registerPrefix(TokenType::If, [this]() { return parseIfExpression(); });
+    registerPrefix(TokenType::Function, [this]() { return parseFunctionLiteral(); });
 
     registerPrefix(TokenType::Bang, [this]() { return parsePrefixExpression(); });
     registerPrefix(TokenType::Minus, [this]() { return parsePrefixExpression(); });
@@ -96,7 +97,69 @@ std::unique_ptr<Expression> Parser::parseIfExpression() {
 
     expression->Consequence = parseBlockStatement();
 
+    if (peekTokenIs(TokenType::Else)) {
+        nextToken();
+
+        if (!expectPeek(TokenType::LSquirly)) {
+            return nullptr;
+        }
+
+        expression->Alternative = parseBlockStatement();
+    }
+
     return expression;
+}
+
+std::unique_ptr<Expression> Parser::parseFunctionLiteral() {
+    auto lit = std::make_unique<FunctionLiteral>();
+
+    lit->token = curToken;
+
+    if (!expectPeek(TokenType::LParen)) {
+        return nullptr;
+    }
+
+    lit->Parameters = parseFunctionParameters();
+
+    if (!expectPeek(TokenType::LSquirly)) {
+        return nullptr;
+    }
+
+    lit->Body = parseBlockStatement();
+
+    return lit;
+}
+
+std::vector<std::unique_ptr<Identifier>> Parser::parseFunctionParameters() {
+    std::vector<std::unique_ptr<Identifier>> identifiers;
+
+    if (peekTokenIs(TokenType::RParen)) {
+        nextToken();
+        return identifiers;
+    }
+
+    nextToken();
+
+    auto ident = std::make_unique<Identifier>();
+    ident->token = curToken;
+    ident->Value = curToken.literal;
+
+    identifiers.push_back(std::move(ident));
+
+    while (peekTokenIs(TokenType::Comma)) {
+        nextToken();
+        nextToken();
+        auto ident = std::make_unique<Identifier>();
+        ident->token = curToken;
+        ident->Value = curToken.literal;
+        identifiers.push_back(std::move(ident));
+    }
+
+    if (!expectPeek(TokenType::RParen)) {
+        return {};
+    }
+
+    return identifiers;
 }
 
 std::unique_ptr<Expression> Parser::parseIntegerLiteral() {
@@ -173,6 +236,23 @@ std::unique_ptr<Program> Parser::ParseProgram() {
     }
 
     return program;
+}
+
+std::unique_ptr<BlockStatement> Parser::parseBlockStatement() {
+    auto block = std::make_unique<BlockStatement>();
+
+    nextToken();
+
+    while (!curTokenIs(TokenType::RSquirly) && !curTokenIs(TokenType::Eof)) {
+        auto stmt = parseStatement();
+
+        if (stmt != nullptr) {
+            block->Statements.push_back(std::move(stmt));
+        }
+        nextToken();
+    }
+
+    return block;
 }
 
 std::unique_ptr<Statement> Parser::parseStatement() {
@@ -275,23 +355,6 @@ std::unique_ptr<Expression> Parser::parseExpression(int precedence) {
     }
 
     return leftExp;
-}
-
-std::unique_ptr<BlockStatement> Parser::parseBlockStatement() {
-    auto block = std::make_unique<BlockStatement>();
-
-    nextToken();
-
-    while (!curTokenIs(TokenType::RSquirly) && !curTokenIs(TokenType::Eof)) {
-        auto stmt = parseStatement();
-
-        if (stmt != nullptr) {
-            block->Statements.push_back(std::move(stmt));
-        }
-        nextToken();
-    }
-
-    return block;
 }
 
 int Parser::peekPrecedence() {
