@@ -48,6 +48,9 @@ public:
     std::unique_ptr<Expression> parseGroupedExpression();
     std::unique_ptr<Expression> parseIfExpression();
     std::unique_ptr<BlockStatement> parseBlockStatement();
+    std::unique_ptr<Expression> parseFunctionLiteral();
+    std::vector<std::unique_ptr<Identifier>> parseFunctionParameters();
+
     void nextToken();
     std::vector<std::string> Errors();
     void noPrefixParseFnError(TokenType t);
