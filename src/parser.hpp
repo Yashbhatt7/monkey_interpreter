@@ -50,6 +50,8 @@ public:
     std::unique_ptr<BlockStatement> parseBlockStatement();
     std::unique_ptr<Expression> parseFunctionLiteral();
     std::vector<std::unique_ptr<Identifier>> parseFunctionParameters();
+    std::unique_ptr<Expression> parseCallExpression(std::unique_ptr<Expression> left);
+    std::vector<std::unique_ptr<Expression>> parseCallArguments();
 
     void nextToken();
     std::vector<std::string> Errors();
