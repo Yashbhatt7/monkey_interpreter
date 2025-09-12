@@ -19,7 +19,7 @@ int main() {
     try {
         std::string username = getCurrentUsername();
 
-        std::cout << "Hello" << username << "! This is the Monkey programming language!" << "\n";
+        std::cout << "Hello " << username << "! This is the Monkey programming language!" << "\n";
         std::cout << "Feel free to type in commands" << "\n";
 
         Start(std::cin, std::cout);
