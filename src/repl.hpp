@@ -2,10 +2,11 @@
 #define REPL_HPP
 
 #include<iostream>
-
-extern const std::string Prompt;
+#include<vector>
+#include<string>
 
 void Start(std::istream& in, std::ostream& out);
+void printParserErrors(std::ostream& out, const std::vector<std::string>& errors);
 
 #endif
 
