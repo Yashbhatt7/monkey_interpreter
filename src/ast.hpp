@@ -161,4 +161,15 @@ public:
     std::string String() const override;
 };
 
+class CallExpression : public Expression {
+public:
+    Token token;
+    std::unique_ptr<Expression> Function;
+    std::vector<std::unique_ptr<Expression>> Arguments;
+
+    void expressionNode() override {}
+    std::string TokenLiteral() const override;
+    std::string String() const override;
+};
+
 #endif // AST_HPP
