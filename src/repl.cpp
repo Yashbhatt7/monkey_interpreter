@@ -1,7 +1,8 @@
 #include<iostream>
+#include<memory>
 #include "repl.hpp"
-#include "token.hpp"
 #include "lexer.hpp"
+#include "parser.hpp"
 
 const std::string Prompt = ">> ";
 
@@ -16,13 +17,24 @@ void Start(std::istream& in, std::ostream& out) {
             return;
         }
 
-        Lexer lex(line);
-        Token tok = lex.NextToken();
-        while (tok.type != TokenType::Eof) {
-            // std::string s = TokenTypeMap::tokenTypeToString(tok.type);
-            out << "Type" << static_cast<int>(tok.type) << ", Literal: " << tok.literal << std::endl;
-            tok = lex.NextToken();
+        auto lexer = std::make_unique<Lexer>(line);
+        Parser p(std::move(lexer));
+        auto program = p.ParseProgram();
+
+        if (!p.Errors().empty()) {
+            printParserErrors(out, p.Errors());
+            continue;
         }
+
+        out << program->String() << "\n";
+    }
+}
+
+void printParserErrors(std::ostream& out, const std::vector<std::string>& errors) {
+    out << "Woops! We ran into some monkey business here!\n";
+    out << " parser errors:\n";
+    for (const auto& msg : errors) {
+        out << "\t" << msg << "\n";
     }
 }
 
