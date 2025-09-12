@@ -10,6 +10,7 @@ const std::unordered_map<TokenType, Precedence> Parser::precedences = {
     { TokenType::Minus,     Precedence::SUM },
     { TokenType::Slash,     Precedence::PRODUCT },
     { TokenType::Asterisk,  Precedence::PRODUCT },
+    { TokenType::LParen,    Precedence::CALL },
 };
 
 Parser::Parser(std::unique_ptr<Lexer> lexer)
@@ -37,6 +38,7 @@ Parser::Parser(std::unique_ptr<Lexer> lexer)
     registerInfix(TokenType::NotEq, [this](std::unique_ptr<Expression> left) { return parseInfixExpression(std::move(left)); });
     registerInfix(TokenType::Lt, [this](std::unique_ptr<Expression> left) { return parseInfixExpression(std::move(left)); });
     registerInfix(TokenType::Gt, [this](std::unique_ptr<Expression> left) { return parseInfixExpression(std::move(left)); });
+    registerInfix(TokenType::LParen, [this](std::unique_ptr<Expression> left) { return parseCallExpression(std::move(left)); });
 
     nextToken();
     nextToken();
@@ -222,6 +224,39 @@ std::unique_ptr<Expression> Parser::parseInfixExpression(std::unique_ptr<Express
     return expression;
 }
 
+std::unique_ptr<Expression> Parser::parseCallExpression(std::unique_ptr<Expression> left) {
+    auto exp = std::make_unique<CallExpression>();
+    exp->token = curToken;
+    exp->Function = std::move(left);
+    exp->Arguments = parseCallArguments();
+
+    return exp;
+}
+
+std::vector<std::unique_ptr<Expression>> Parser::parseCallArguments() {
+    std::vector<std::unique_ptr<Expression>> args;
+
+    if (peekTokenIs(TokenType::RParen)) {
+        nextToken();
+        return args;
+    }
+
+    nextToken();
+    args.push_back(parseExpression(static_cast<int>(Precedence::LOWEST)));
+
+    while (peekTokenIs(TokenType::Comma)) {
+        nextToken();
+        nextToken();
+        args.push_back(parseExpression(static_cast<int>(Precedence::LOWEST)));
+    }
+
+    if (!expectPeek(TokenType::RParen)) {
+        return {};
+    }
+
+    return args;
+}
+
 // <<- ----------------------------------From here parser starts parsing the program------------------------------------------ ->>
 std::unique_ptr<Program> Parser::ParseProgram() {
     auto program = std::make_unique<Program>();
@@ -287,8 +322,11 @@ std::unique_ptr<LetStatement> Parser::parseLetStatement() {
         return nullptr;
     }
 
-    while (!curTokenIs(TokenType::Semicolon)) {
-        // std::cout << "curToken is:.." << curToken.literal << std::endl;
+    nextToken();
+
+    stmt->Value = parseExpression(static_cast<int>(Precedence::LOWEST));
+
+    if (peekTokenIs(TokenType::Semicolon)) {
         nextToken();
     }
 
@@ -302,7 +340,9 @@ std::unique_ptr<ReturnStatement> Parser::parseReturnStatement() {
 
     nextToken();
 
-    while (!curTokenIs(TokenType::Semicolon)) {
+    stmt->ReturnValue = parseExpression(static_cast<int>(Precedence::LOWEST));
+
+    if (peekTokenIs(TokenType::Semicolon)) {
         nextToken();
     }
 
