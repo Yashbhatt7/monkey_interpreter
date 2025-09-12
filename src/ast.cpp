@@ -54,6 +54,10 @@ std::string FunctionLiteral::TokenLiteral() const {
     return token.literal;
 }
 
+std::string CallExpression::TokenLiteral() const {
+    return token.literal;
+}
+
 std::string Program::String() const {
     std::ostringstream out;
     for (const auto& s : Statements) {
@@ -182,6 +186,29 @@ std::string FunctionLiteral::String() const {
 
     out << ")";
     out << Body->String();
+
+    return out.str();
+}
+
+std::string CallExpression::String() const {
+    std::ostringstream out;
+    std::vector<std::string> args;
+
+    for (const auto& a : Arguments) {
+        args.push_back(a->String());
+    }
+
+    out << Function->String();
+    out << "(";
+
+    for (size_t i = 0; i < args.size(); ++i) {
+        if (i > 0) {
+            out << ", ";
+        }
+        out << args[i];
+    }
+
+    out << ")";
 
     return out.str();
 }
