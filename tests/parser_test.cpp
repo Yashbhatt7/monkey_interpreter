@@ -6,14 +6,14 @@
 #include "../src/ast.hpp"
 #include "../src/parser.hpp"
 
-using Value = std::variant<int, int64_t, std::string, bool>;
+using Value = std::variant<int64_t, std::string, bool>;
 struct PrefixTests {
     std::string input;
     std::string operator_;
     Value integerValue;
 };
 
-using Value = std::variant<int, int64_t, std::string, bool>;
+using Value = std::variant<int64_t, std::string, bool>;
 struct InfixTests {
     std::string input;
     Value leftValue;
@@ -122,7 +122,7 @@ bool testBooleanLiteral(Expression* exp, bool value) {
     return true;
 }
 
-using LiteralValue = std::variant<int, int64_t, std::string, bool>;
+using LiteralValue = std::variant<int64_t, std::string, bool>;
 bool testLiteralExpression(Expression* exp, const LiteralValue& expected) {
     return std::visit([exp](const auto& value) -> bool {
         using T = std::decay_t<decltype(value)>;
@@ -181,66 +181,87 @@ void checkParserErrors(Parser* p) {
 }
 
 TEST(ParserTest, TestLetStatement) {
-    std::string input = R"(
-        let x = 5;
-        let y = 10;
-        let foobar = 838383;
-    )";
-
-    auto lexer = std::make_unique<Lexer>(input);
-    Parser p(std::move(lexer));
-
-    auto program = p.ParseProgram();
-    checkParserErrors(&p);
-
-    ASSERT_NE(program, nullptr) << "ParserProgram() returned nullptr";
-
-    ASSERT_EQ(program->Statements.size(), 3)
-        << "program.Statements does not contain 3 statement. got=" << program->Statements.size();
-
     struct TestCase {
+        std::string input;
         std::string expectedIdentifier;
+        std::variant<int64_t, std::string, bool> expectedValue;
     };
 
     std::vector<TestCase> tests = {
-        {"x"},
-        {"y"},
-        {"foobar"},
+        {"let x = 5;", "x", int64_t(5)},
+        {"let y = true;", "y", true},
+        {"let foobar = y;", "foobar", std::string("y")}
     };
 
-    for (size_t i = 0; i < tests.size(); ++i) {
-        const auto& tt = tests[i];
-        Statement* stmt = program->Statements[i].get();
+    for (const auto& tt : tests) {
+        auto lexer = std::make_unique<Lexer>(tt.input);
+        Parser p(std::move(lexer));
+        auto program = p.ParseProgram();
 
-        EXPECT_TRUE(testLetStatement(stmt, tt.expectedIdentifier))
-            << "Test [" << i << "] - Let statement test failed for identifier: " << tt.expectedIdentifier;
+        checkParserErrors(&p);
+
+        ASSERT_EQ(program->Statements.size(), 1)
+            << "program.Statements does not contain 1 statements. got=" << program->Statements.size();
+
+        auto stmt = program->Statements[0].get();
+
+        ASSERT_NE(stmt, nullptr)
+            << "Statement is null";
+
+        std::cout << "Statement type: " << typeid(*stmt).name() << std::endl;
+
+        auto letStmt = dynamic_cast<LetStatement*>(stmt);
+        if (letStmt == nullptr) {
+            FAIL() << "Failed to cast to LetStatement. Actual type: " << typeid(*stmt).name();
+        }
+
+        ASSERT_TRUE(testLetStatement(stmt, tt.expectedIdentifier));
+
+        ASSERT_NE(letStmt->Value.get(), nullptr)
+            << "LetStatement Value is null";
+
+        ASSERT_TRUE(testLiteralExpression(letStmt->Value.get(), tt.expectedValue));
     }
 }
 
 TEST(ParserTest, TestReturnStatement) {
-    std::string input = R"(
-        return 5;
-        return 10;
-        return 993322;
-    )";
+    struct TestCase {
+        std::string input;
+        std::variant<int64_t, std::string, bool> expectedValue;
+    };
 
-    auto lexer = std::make_unique<Lexer>(input);
-    Parser p(std::move(lexer));
+    std::vector<TestCase> tests = {
+        {"return 5;", int64_t(5)},
+        {"return true;", true},
+        {"return foobar;", std::string("foobar")}
+    };
 
-    auto program = p.ParseProgram();
-    checkParserErrors(&p);
+    for (const auto& tt : tests) {
+        auto lexer = std::make_unique<Lexer>(tt.input);
+        Parser p(std::move(lexer));
+        auto program = p.ParseProgram();
 
-    ASSERT_NE(program, nullptr) << "ParserProgram() returned nullptr";
+        checkParserErrors(&p);
 
-    ASSERT_EQ(program->Statements.size(), 3)
-        << "program.Statements does not contain 3 statement. got=" << program->Statements.size();
+        ASSERT_EQ(program->Statements.size(), 1)
+            << "program.Statements does not contain 1 statements. got="
+            << program->Statements.size();
 
-    for (auto& stmtPtr : program->Statements) {
-        auto* returnStmt = dynamic_cast<ReturnStatement*>(stmtPtr.get());
+        auto stmt = program->Statements[0].get();
+
+        auto returnStmt = dynamic_cast<ReturnStatement*>(stmt);
         ASSERT_NE(returnStmt, nullptr)
-            << "stmt is not ReturnStatement. got=" << typeid(stmtPtr).name();
+            << "stmt not ReturnStatement. got=" << typeid(*stmt).name();
 
-        EXPECT_EQ(returnStmt->TokenLiteral(), "return");
+        ASSERT_EQ(returnStmt->TokenLiteral(), "return")
+            << "returnStmt.TokenLiteral not 'return', got " << returnStmt->TokenLiteral();
+
+        // Check if ReturnValue exists before testing it
+        ASSERT_NE(returnStmt->ReturnValue.get(), nullptr)
+            << "ReturnStatement ReturnValue is null";
+
+        ASSERT_TRUE(testLiteralExpression(returnStmt->ReturnValue.get(), tt.expectedValue))
+            << "testLiteralExpression failed for input: " << tt.input;
     }
 }
 
@@ -465,6 +486,18 @@ TEST(ParserTest, TestOperatorPrecedenceParsing) {
             "!(true == true)",
             "(!(true == true))",
         },
+        {
+            "a + add(b * c) + d",
+            "((a + add((b * c))) + d)",
+        },
+        {
+            "add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))",
+            "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))",
+        },
+        {
+            "add(a + b + c * d / f + g)",
+            "add((((a + b) + ((c * d) / f)) + g))",
+        },
     };
 
     for (const auto& tt : tests) {
@@ -660,6 +693,93 @@ TEST(ParserTest, FunctionParameterParsing) {
 
         for (size_t i = 0; i < tt.expectedParams.size(); ++i) {
             testLiteralExpression(function->Parameters[i].get(), tt.expectedParams[i]);
+        }
+    }
+}
+
+TEST(ParserTest, CallExpressionParsing) {
+    std::string input = "add(1, 2 * 3, 4 + 5);";
+
+    auto lexer = std::make_unique<Lexer>(input);
+    Parser p(std::move(lexer));
+    auto program = p.ParseProgram();
+
+    checkParserErrors(&p);
+
+    ASSERT_EQ(program->Statements.size(), 1)
+        << "program.statements does not contain 1 statement. got=" << program->Statements.size();
+
+    auto stmt = dynamic_cast<ExpressionStatement*>(program->Statements[0].get());
+    ASSERT_NE(stmt, nullptr)
+        << "stmt is not ExpressionStatement.";
+
+    auto exp = dynamic_cast<CallExpression*>(stmt->Expression.get());
+    ASSERT_NE(exp, nullptr)
+        << "stmt.expression is not CallExpression.";
+
+    if (!testIdentifier(exp->Function.get(), "add")) {
+        return;
+    }
+
+    ASSERT_EQ(exp->Arguments.size(), 3)
+        << "wrong length of arguments. got=" << exp->Arguments.size();
+
+    testLiteralExpression(exp->Arguments[0].get(), 1);
+    testInfixExpression(exp->Arguments[1].get(), 2, "*", 3);
+    testInfixExpression(exp->Arguments[2].get(), 4, "+", 5);
+}
+
+TEST(ParserTest, CallExpressionParameterParsing) {
+    struct TestCase {
+        std::string input;
+        std::string expectedIdent;
+        std::vector<std::string> expectedArgs;
+    };
+
+    std::vector<TestCase> tests = {
+        {
+            "add();",
+            "add",
+            {}
+        },
+        {
+            "add(1);",
+            "add",
+            {"1"}
+        },
+        {
+            "add(1, 2 * 3, 4 + 5);",
+            "add",
+            {"1", "(2 * 3)", "(4 + 5)"}
+        }
+    };
+
+    for (const auto& tt : tests) {
+        auto lexer = std::make_unique<Lexer>(tt.input);
+        Parser p(std::move(lexer));
+        auto program = p.ParseProgram();
+
+        checkParserErrors(&p);
+
+        auto stmt = dynamic_cast<ExpressionStatement*>(program->Statements[0].get());
+        ASSERT_NE(stmt, nullptr);
+
+        auto exp = dynamic_cast<CallExpression*>(stmt->Expression.get());
+        ASSERT_NE(exp, nullptr)
+            << "stmt.expression is not CallExpression.";
+
+        if (!testIdentifier(exp->Function.get(), tt.expectedIdent)) {
+            return;
+        }
+
+        ASSERT_EQ(exp->Arguments.size(), tt.expectedArgs.size())
+            << "wrong number of arguments. want=" << tt.expectedArgs.size()
+            << ", got=" << exp->Arguments.size();
+
+        for (size_t i = 0; i < tt.expectedArgs.size(); ++i) {
+            EXPECT_EQ(exp->Arguments[i]->String(), tt.expectedArgs[i])
+                << "argument " << i << " wrong. want=\"" << tt.expectedArgs[i]
+                << "\", got=\"" << exp->Arguments[i]->String() << "\"";
         }
     }
 }
