@@ -663,7 +663,7 @@ TEST(ParserTest, TestFunctionLiteralParsing) {
     testInfixExpression(bodyStmt->Expression.get(), "x", "+", "y");
 }
 
-TEST(ParserTest, FunctionParameterParsing) {
+TEST(ParserTest, TestFunctionParameterParsing) {
     struct TestCase {
         std::string input;
         std::vector<std::string> expectedParams;
@@ -697,7 +697,7 @@ TEST(ParserTest, FunctionParameterParsing) {
     }
 }
 
-TEST(ParserTest, CallExpressionParsing) {
+TEST(ParserTest, TestCallExpressionParsing) {
     std::string input = "add(1, 2 * 3, 4 + 5);";
 
     auto lexer = std::make_unique<Lexer>(input);
@@ -729,7 +729,7 @@ TEST(ParserTest, CallExpressionParsing) {
     testInfixExpression(exp->Arguments[2].get(), 4, "+", 5);
 }
 
-TEST(ParserTest, CallExpressionParameterParsing) {
+TEST(ParserTest, TestCallExpressionParameterParsing) {
     struct TestCase {
         std::string input;
         std::string expectedIdent;
