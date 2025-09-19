@@ -118,7 +118,7 @@ public:
     std::string String() const override;
 };
 
-class Boolean : public Expression {
+class BooleanExpression : public Expression {
 public:
     Token token;
     bool Value;

@@ -100,7 +100,7 @@ bool testIdentifier(Expression* exp, const std::string& value) {
 }
 
 bool testBooleanLiteral(Expression* exp, bool value) {
-    Boolean* boolean = dynamic_cast<Boolean*>(exp);
+    BooleanExpression* boolean = dynamic_cast<BooleanExpression*>(exp);
     if (!boolean) {
         ADD_FAILURE() << "exp not Boolean. got=" << typeid(*exp).name();
         return false;
@@ -532,7 +532,7 @@ TEST(ParserTest, TestBooleanExpression) {
         ASSERT_NE(stmt, nullptr)
             << "program.Statements[0] is not ExpressionStatement";
 
-        auto exp = dynamic_cast<Boolean*>(stmt->Expression.get());
+        auto exp = dynamic_cast<BooleanExpression*>(stmt->Expression.get());
         ASSERT_NE(exp, nullptr)
             << "exp is not Boolean. got=";
 

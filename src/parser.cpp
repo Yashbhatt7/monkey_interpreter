@@ -59,7 +59,7 @@ std::unique_ptr<Expression> Parser::parseIdentifier() {
 
 std::unique_ptr<Expression> Parser::parseBoolean() {
     // Trace trace("parseBoolean");
-    auto boolean = std::make_unique<Boolean>();
+    auto boolean = std::make_unique<BooleanExpression>();
     boolean->token = curToken;
     boolean->Value = curTokenIs(TokenType::True);
 
