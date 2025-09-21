@@ -38,7 +38,7 @@ std::string InfixExpression::TokenLiteral() const {
     return token.literal;
 }
 
-std::string BooleanExpression::TokenLiteral() const {
+std::string BooleanLiteral::TokenLiteral() const {
     return token.literal;
 }
 
@@ -136,7 +136,7 @@ std::string InfixExpression::String() const {
     return out.str();
 }
 
-std::string BooleanExpression::String() const {
+std::string BooleanLiteral::String() const {
     return token.literal;
 }
 
