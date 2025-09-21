@@ -100,7 +100,7 @@ bool testIdentifier(Expression* exp, const std::string& value) {
 }
 
 bool testBooleanLiteral(Expression* exp, bool value) {
-    BooleanExpression* boolean = dynamic_cast<BooleanExpression*>(exp);
+    BooleanLiteral* boolean = dynamic_cast<BooleanLiteral*>(exp);
     if (!boolean) {
         ADD_FAILURE() << "exp not Boolean. got=" << typeid(*exp).name();
         return false;
@@ -513,7 +513,7 @@ TEST(ParserTest, TestOperatorPrecedenceParsing) {
     }
 }
 
-TEST(ParserTest, TestBooleanExpression) {
+TEST(ParserTest, TestBooleanLiteral) {
     std::vector<TestCs> tests = {
         { "true", true },
         { "false", false },
@@ -532,7 +532,7 @@ TEST(ParserTest, TestBooleanExpression) {
         ASSERT_NE(stmt, nullptr)
             << "program.Statements[0] is not ExpressionStatement";
 
-        auto exp = dynamic_cast<BooleanExpression*>(stmt->Expression.get());
+        auto exp = dynamic_cast<BooleanLiteral*>(stmt->Expression.get());
         ASSERT_NE(exp, nullptr)
             << "exp is not Boolean. got=";
 
