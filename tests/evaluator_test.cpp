@@ -8,22 +8,22 @@
 #include "../src/evaluator.hpp"
 
 std::unique_ptr<Object> testEval(const std::string& input) {
-    auto l = std::make_unique<Lexer>(input);
-    Parser p(std::move(l));
-    auto program = p.ParseProgram();
-
-    return Eval(std::move(program));
+    auto lexer = std::make_unique<Lexer>(input);
+    Parser parser(std::move(lexer));
+    auto program = parser.ParseProgram();
+    return Eval(program.get());
 }
 
 bool testIntegerObject(Object* obj, int64_t expected) {
     auto result = dynamic_cast<Integer*>(obj);
     if (!result) {
-        std::cerr << "object is not Integer.\n";
+        std::cerr << "object is not Integer. got=" << typeid(*obj).name() << std::endl;
         return false;
     }
 
     if (result->Value != expected) {
-        std::cerr << "object has wrong value. got" << result->Value << " want " << expected;
+        std::cerr << "object has wrong value. got=" << result->Value
+            << ", want=" << expected << std::endl;
         return false;
     }
 
@@ -38,13 +38,12 @@ TEST(EvaluatorTest, TestEvalIntegerExpression) {
 
     std::vector<TestCase> tests = {
         {"5", 5},
-        {"10", 10},
+        {"10", 10}
     };
 
     for (const auto& tt : tests) {
-        auto evaluator = testEval(tt.input);
-        EXPECT_TRUE(testIntegerObject(evaluator.get(), tt.expected))
-            << "Failed testing input: " << tt.input;
+        auto evaluated = testEval(tt.input);
+        ASSERT_TRUE(testIntegerObject(evaluated.get(), tt.expected));
     }
 }
 
