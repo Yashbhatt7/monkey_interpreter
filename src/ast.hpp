@@ -6,7 +6,21 @@
 #include<memory>
 #include "token.hpp"
 
-// note: dont forget to use override keyword.
+enum class NodeType {
+    PROGRAM,
+    LET_STATEMENT,
+    RETURN_STATEMENT,
+    EXPRESSION_STATEMENT,
+    BLOCK_STATEMENT,
+    IDENTIFIER,
+    INTEGER_LITERAL,
+    BOOLEAN_LITERAL,
+    PREFIX_EXPRESSION,
+    INFIX_EXPRESSION,
+    IF_EXPRESSION,
+    FUNCTION_LITERAL,
+    CALL_EXPRESSION,
+};
 
 // Base Node interface
 class Node {
@@ -14,6 +28,7 @@ public:
     virtual std::string TokenLiteral() const = 0;
     virtual std::string String() const = 0;
     virtual ~Node() = default;
+    virtual NodeType Type() const = 0;
 };
 
 // two types of Node: expressions and statements
@@ -38,6 +53,7 @@ public:
 
     std::string TokenLiteral() const override;
     std::string String() const override;
+    NodeType Type() const override { return NodeType::PROGRAM; };
 };
 
 class Identifier : public Expression {
@@ -48,6 +64,7 @@ public:
     void expressionNode() override {}
     std::string TokenLiteral() const override;
     std::string String() const override;
+    NodeType Type() const override { return NodeType::IDENTIFIER; };
 };
 
 class LetStatement : public Statement {
@@ -59,6 +76,7 @@ public:
     void statementNode() override {}
     std::string TokenLiteral() const override;
     std::string String() const override;
+    NodeType Type() const override { return NodeType::LET_STATEMENT; };
 };
 
 class ReturnStatement : public Statement {
@@ -69,6 +87,7 @@ public:
     void statementNode() override {}
     std::string TokenLiteral() const override;
     std::string String() const override;
+    NodeType Type() const override { return NodeType::RETURN_STATEMENT; };
 };
 
 class ExpressionStatement : public Statement {
@@ -79,6 +98,7 @@ public:
     void statementNode() override {}
     std::string TokenLiteral() const override;
     std::string String() const override;
+    NodeType Type() const override { return NodeType::EXPRESSION_STATEMENT; };
 };
 
 class IntegerLiteral : public Expression {
@@ -89,6 +109,7 @@ public:
     void expressionNode() override {}
     std::string TokenLiteral() const override;
     std::string String() const override;
+    NodeType Type() const override { return NodeType::INTEGER_LITERAL; };
 };
 
 class PrefixExpression : public Expression {
@@ -102,6 +123,7 @@ public:
     void expressionNode() override {}
     std::string TokenLiteral() const override;
     std::string String() const override;
+    NodeType Type() const override { return NodeType::PREFIX_EXPRESSION; };
 };
 
 class InfixExpression : public Expression {
@@ -116,9 +138,10 @@ public:
     void expressionNode() override {}
     std::string TokenLiteral() const override;
     std::string String() const override;
+    NodeType Type() const override { return NodeType::INFIX_EXPRESSION; };
 };
 
-class BooleanExpression : public Expression {
+class BooleanLiteral : public Expression {
 public:
     Token token;
     bool Value;
@@ -126,6 +149,7 @@ public:
     void expressionNode() override {}
     std::string TokenLiteral() const override;
     std::string String() const override;
+    NodeType Type() const override { return NodeType::BOOLEAN_LITERAL; };
 };
 
 class BlockStatement : public Statement {
@@ -136,6 +160,7 @@ public:
     void statementNode() override {}
     std::string TokenLiteral() const override;
     std::string String() const override;
+    NodeType Type() const override { return NodeType::BLOCK_STATEMENT; };
 };
 
 class IfExpression : public Expression {
@@ -148,6 +173,7 @@ public:
     void expressionNode() override {}
     std::string TokenLiteral() const override;
     std::string String() const override;
+    NodeType Type() const override { return NodeType::IF_EXPRESSION; };
 };
 
 class FunctionLiteral : public Expression {
@@ -159,6 +185,7 @@ public:
     void expressionNode() override {}
     std::string TokenLiteral() const override;
     std::string String() const override;
+    NodeType Type() const override { return NodeType::FUNCTION_LITERAL; };
 };
 
 class CallExpression : public Expression {
@@ -170,6 +197,7 @@ public:
     void expressionNode() override {}
     std::string TokenLiteral() const override;
     std::string String() const override;
+    NodeType Type() const override { return NodeType::CALL_EXPRESSION; };
 };
 
 #endif // AST_HPP
