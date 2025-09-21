@@ -1,13 +1,14 @@
 #ifndef OBJECT_HPP
 #define OBJECT_HPP
 
+#include<cstdint>
 #include<string>
 
 using ObjectType = std::string;
 
-extern const ObjectType INTEGER_OBJ;
-extern const ObjectType BOOLEAN_OBJ;
-extern const ObjectType NULL_OBJ;
+inline const ObjectType INTEGER_OBJ = "INTEGER";
+inline const ObjectType BOOLEAN_OBJ = "BOOLEAN";
+inline const ObjectType NULL_OBJ    = "NULL";
 
 class Object {
 public:
