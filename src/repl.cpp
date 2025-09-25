@@ -3,6 +3,7 @@
 #include "repl.hpp"
 #include "lexer.hpp"
 #include "parser.hpp"
+#include "evaluator.hpp"
 
 const std::string Prompt = ">> ";
 
@@ -24,6 +25,12 @@ void Start(std::istream& in, std::ostream& out) {
         if (!p.Errors().empty()) {
             printParserErrors(out, p.Errors());
             continue;
+        }
+
+        auto evaluated = Eval(program.get());
+        if (evaluated != nullptr) {
+            out << evaluated->Inspect();
+            out << "\n";
         }
 
         out << program->String() << "\n";
