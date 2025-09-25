@@ -2,11 +2,14 @@
 
 std::unique_ptr<Object> evalStatements(const std::vector<std::unique_ptr<Statement>>& stmts) {
     std::unique_ptr<Object> result;
+    // std::cout << "will it call evalStatements?\n";
 
     for (const auto& statement : stmts) {
+        // std::cout << "how many times loop ran?\n";
         result = Eval(statement.get());
     }
 
+    // std::cout << "did this come out of loop?\n";
     return result;
 }
 
@@ -16,22 +19,26 @@ std::unique_ptr<Object> Eval(Node* node) {
         // Program
         case NodeType::PROGRAM: {
             auto program = static_cast<Program*>(node);
+            // std::cout << "will it be program?\n";
             return evalStatements(program->Statements);
         }
 
         // Statements
         case NodeType::EXPRESSION_STATEMENT: {
             auto exprStmt = static_cast<ExpressionStatement*>(node);
+            // std::cout << "will it be Statement?\n";
             return Eval(exprStmt->Expression.get());
         }
 
         // Expressions
         case NodeType::INTEGER_LITERAL: {
             auto intLiteral = static_cast<IntegerLiteral*>(node);
+            // std::cout << "will it be IntegerLiteral?\n";
             return std::make_unique<Integer>(intLiteral->Value);
         }
         case NodeType::BOOLEAN_LITERAL: {
             auto boolLiteral = static_cast<BooleanLiteral*>(node);
+            // std::cout << "will it be BooleanLiteral?\n";
             return std::make_unique<Boolean>(boolLiteral->Value);
         }
     }
