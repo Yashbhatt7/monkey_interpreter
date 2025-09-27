@@ -47,3 +47,37 @@ TEST(EvaluatorTest, TestEvalIntegerExpression) {
     }
 }
 
+bool testBooleanObject(Object* obj, bool expected) {
+    auto result = dynamic_cast<Boolean*>(obj);
+
+    if (!result) {
+        std::cerr << "object is not Boolean. got=" << typeid(*obj).name() << std::endl;
+        return false;
+    }
+
+    if (result->Value != expected) {
+        std::cerr << "object has wrong value. got=" << result->Value
+            << ", want= " << expected << "\n";
+        return false;
+    }
+
+    return true;
+}
+
+TEST(EvaluatorTest, TestEvalBooleanExpression) {
+    struct TestCase {
+        std::string input;
+        bool expected;
+    };
+
+    std::vector<TestCase> tests = {
+        {"true", true},
+        {"false", false},
+    };
+
+    for (const auto& tt : tests) {
+        auto evaluated = testEval(tt.input);
+        ASSERT_TRUE(testBooleanObject(evaluated.get(), tt.expected));
+    }
+}
+

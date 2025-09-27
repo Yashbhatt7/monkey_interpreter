@@ -1,1 +1,0 @@
-/usr/bin/c++ -std=c++23 -Wl,--dependency-file=CMakeFiles/evaluator_test.dir/link.d CMakeFiles/evaluator_test.dir/tests/evaluator_test.cpp.o -o evaluator_test  libmonkey_interpreter.a /usr/lib/libgtest_main.so.1.17.0 /usr/lib/libgtest.so.1.17.0

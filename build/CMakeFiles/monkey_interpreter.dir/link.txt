@@ -1,2 +1,0 @@
-/usr/bin/ar qc libmonkey_interpreter.a CMakeFiles/monkey_interpreter.dir/src/lexer.cpp.o CMakeFiles/monkey_interpreter.dir/src/parser.cpp.o CMakeFiles/monkey_interpreter.dir/src/evaluator.cpp.o CMakeFiles/monkey_interpreter.dir/src/object.cpp.o CMakeFiles/monkey_interpreter.dir/src/ast.cpp.o
-/usr/bin/ranlib libmonkey_interpreter.a
