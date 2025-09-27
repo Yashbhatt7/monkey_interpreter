@@ -13,6 +13,26 @@ std::unique_ptr<Object> evalStatements(const std::vector<std::unique_ptr<Stateme
     return result;
 }
 
+// Reuse static Boolean instances instead of allocating new objects each time
+// Note: understand singltons this(starting from here to the function nativeNullObject) is not fully singlton design...
+// here singlton can be done with either raw pointers or shared_ptr<>.
+namespace {
+    static Null NULL_NULL_OBJ{};
+    static Boolean TRUE_OBJ{true};
+    static Boolean FALSE_OBJ{false};
+}
+
+std::unique_ptr<Boolean> nativeBoolToBooleanObject(bool input) {
+    if (input) {
+        return std::make_unique<Boolean>(TRUE_OBJ);
+    }
+    return std::make_unique<Boolean>(FALSE_OBJ);
+}
+
+std::unique_ptr<Null> nativeNullObject() {
+    return std::make_unique<Null>(NULL_NULL_OBJ);
+}
+
 // Experiment (till now enum design is working)
 std::unique_ptr<Object> Eval(Node* node) {
     switch (node->Type()) {
@@ -27,7 +47,7 @@ std::unique_ptr<Object> Eval(Node* node) {
         case NodeType::EXPRESSION_STATEMENT: {
             auto exprStmt = static_cast<ExpressionStatement*>(node);
             // std::cout << "will it be Statement?\n";
-            return Eval(exprStmt->Expression.get());
+            return Eval(exprStmt->ExpressionPtr.get());
         }
 
         // Expressions
@@ -39,12 +59,14 @@ std::unique_ptr<Object> Eval(Node* node) {
         case NodeType::BOOLEAN_LITERAL: {
             auto boolLiteral = static_cast<BooleanLiteral*>(node);
             // std::cout << "will it be BooleanLiteral?\n";
-            return std::make_unique<Boolean>(boolLiteral->Value);
+            return nativeBoolToBooleanObject(boolLiteral->Value);
         }
     }
 
-    return nullptr;
+    return nativeNullObject();
 }
+
+
 
 // std::unique_ptr<Object> Eval(Node* node) {
 //     // Program
