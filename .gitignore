@@ -1,21 +1,20 @@
-# Ignore everything
-*
+# Build artifacts and directories
+build/
+cmake_build_debug/
+cmake_build_release/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+install_manifest.txt
 
-# Allow source files
-!*.cpp
-!*.hpp
-!*.h
+# Compiled binaries and libraries
+*.out
 
-# Allow directories
-!*/
-
-# Allow build system files
-!CMakeLists.txt
-!Makefile
-
-# Allow documentation
-!*.md
-!*.txt
+# Object files
+*.o
+*.obj
 
 # Allow .gitignore itself
 !.gitignore
