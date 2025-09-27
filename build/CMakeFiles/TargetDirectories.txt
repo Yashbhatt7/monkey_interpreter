@@ -1,0 +1,4 @@
+/home/thecourier/projects/c++/interpreter/monkey/build/CMakeFiles/monkey_interpreter.dir
+/home/thecourier/projects/c++/interpreter/monkey/build/CMakeFiles/evaluator_test.dir
+/home/thecourier/projects/c++/interpreter/monkey/build/CMakeFiles/edit_cache.dir
+/home/thecourier/projects/c++/interpreter/monkey/build/CMakeFiles/rebuild_cache.dir
