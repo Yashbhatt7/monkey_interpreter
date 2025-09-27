@@ -93,7 +93,7 @@ public:
 class ExpressionStatement : public Statement {
 public:
     Token token;
-    std::unique_ptr<Expression> Expression;
+    std::unique_ptr<Expression> ExpressionPtr;
 
     void statementNode() override {}
     std::string TokenLiteral() const override;

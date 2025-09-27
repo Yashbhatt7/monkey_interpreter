@@ -98,8 +98,8 @@ std::string ReturnStatement::String() const {
 }
 
 std::string ExpressionStatement::String() const {
-    if (Expression != nullptr) {
-        return Expression->String();
+    if (ExpressionPtr != nullptr) {
+        return ExpressionPtr->String();
     }
 
     return "";

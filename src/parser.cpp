@@ -355,7 +355,7 @@ std::unique_ptr<ExpressionStatement> Parser::parseExpressionStatement() {
     stmt->token = curToken;
     // std::cout << "curToken is: " << curToken.literal << "\n";
 
-    stmt->Expression = parseExpression(static_cast<int>(Precedence::LOWEST));
+    stmt->ExpressionPtr = parseExpression(static_cast<int>(Precedence::LOWEST));
 
     if (peekTokenIs(TokenType::Semicolon)) {
         nextToken();
