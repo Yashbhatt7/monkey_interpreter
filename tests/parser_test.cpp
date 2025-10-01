@@ -282,7 +282,7 @@ TEST(ParserTest, TestIdentifierExpression) {
     ASSERT_NE(stmt, nullptr)
         << "program.Statements[0] is not ExpressionStatement.";
 
-    auto ident = dynamic_cast<Identifier*>(stmt->Expression.get());
+    auto ident = dynamic_cast<Identifier*>(stmt->ExpressionPtr.get());
     ASSERT_NE(ident, nullptr)
         << "exp not Identifier.";
 
@@ -309,7 +309,7 @@ TEST(ParserTest, TestIntegerLiteralExpression) {
     ASSERT_NE(stmt, nullptr)
         << "program.Statement[0] is not ExpressionStatement.";
 
-    auto literal = dynamic_cast<IntegerLiteral*>(stmt->Expression.get());
+    auto literal = dynamic_cast<IntegerLiteral*>(stmt->ExpressionPtr.get());
     ASSERT_NE(literal, nullptr)
         << "exp not integerliteral.";
 
@@ -341,7 +341,7 @@ TEST(ParserTest, TestParsingPrefixExpressions) {
         ASSERT_NE(stmt, nullptr)
             << "program.Statements[0] is not ExpressionStatement";
 
-        auto exp = dynamic_cast<PrefixExpression*>(stmt->Expression.get());
+        auto exp = dynamic_cast<PrefixExpression*>(stmt->ExpressionPtr.get());
         ASSERT_NE(exp, nullptr)
             << "stmt is not PrefixExpression";
 
@@ -380,7 +380,7 @@ TEST(ParserTest, TestParsingInfixExpressions) {
         ASSERT_NE(stmt, nullptr)
             << "program.Statements[0] is not ExpressionStatement";
 
-        auto exp = dynamic_cast<InfixExpression*>(stmt->Expression.get());
+        auto exp = dynamic_cast<InfixExpression*>(stmt->ExpressionPtr.get());
         ASSERT_NE(exp, nullptr)
             << "exp is not InfixExpression";
 
@@ -532,7 +532,7 @@ TEST(ParserTest, TestBooleanLiteral) {
         ASSERT_NE(stmt, nullptr)
             << "program.Statements[0] is not ExpressionStatement";
 
-        auto exp = dynamic_cast<BooleanLiteral*>(stmt->Expression.get());
+        auto exp = dynamic_cast<BooleanLiteral*>(stmt->ExpressionPtr.get());
         ASSERT_NE(exp, nullptr)
             << "exp is not Boolean. got=";
 
@@ -558,7 +558,7 @@ TEST(ParserTest, TestIfExpression) {
     ASSERT_TRUE(stmt != nullptr)
         << "program.Statements[0] is not ExpressionStatement";
 
-    auto exp = dynamic_cast<IfExpression*>(stmt->Expression.get());
+    auto exp = dynamic_cast<IfExpression*>(stmt->ExpressionPtr.get());
     ASSERT_TRUE(exp != nullptr)
         << "stmt.Expression is not IfExpression.";
 
@@ -572,7 +572,7 @@ TEST(ParserTest, TestIfExpression) {
     ASSERT_TRUE(consequence != nullptr)
         << "Statements[0] is not ExpressionStatement";
 
-    EXPECT_TRUE(testIdentifier(consequence->Expression.get(), "x"))
+    EXPECT_TRUE(testIdentifier(consequence->ExpressionPtr.get(), "x"))
         << "Failed Testing";
 
     EXPECT_EQ(exp->Alternative, nullptr)
@@ -596,7 +596,7 @@ TEST(ParserTest, TestIfElseExpression) {
     ASSERT_TRUE(stmt != nullptr)
         << "program.Statements[0] is not ExpressionStatement";
 
-    auto exp = dynamic_cast<IfExpression*>(stmt->Expression.get());
+    auto exp = dynamic_cast<IfExpression*>(stmt->ExpressionPtr.get());
     ASSERT_TRUE(exp != nullptr)
         << "stmt.Expression is not IfExpression.";
 
@@ -610,7 +610,7 @@ TEST(ParserTest, TestIfElseExpression) {
     ASSERT_TRUE(consequence != nullptr)
         << "Statements[0] is not ExpressionStatement";
 
-    EXPECT_TRUE(testIdentifier(consequence->Expression.get(), "x"))
+    EXPECT_TRUE(testIdentifier(consequence->ExpressionPtr.get(), "x"))
         << "Failed Testing";
 
     ASSERT_TRUE(exp->Alternative != nullptr)
@@ -623,7 +623,7 @@ TEST(ParserTest, TestIfElseExpression) {
     ASSERT_TRUE(alternative != nullptr)
         << "Statements[0] is not ExpressionStatement";
 
-    EXPECT_TRUE(testIdentifier(alternative->Expression.get(), "y"))
+    EXPECT_TRUE(testIdentifier(alternative->ExpressionPtr.get(), "y"))
         << "Failed Testing";
 }
 
@@ -642,7 +642,7 @@ TEST(ParserTest, TestFunctionLiteralParsing) {
     ASSERT_NE(stmt, nullptr)
         << "program.Statements[0] is not ExpressionStatement.";
 
-    auto function = dynamic_cast<FunctionLiteral*>(stmt->Expression.get());
+    auto function = dynamic_cast<FunctionLiteral*>(stmt->ExpressionPtr.get());
     ASSERT_NE(function, nullptr)
         << "stmt.Expression is not FunctionLiteral.";
 
@@ -660,7 +660,7 @@ TEST(ParserTest, TestFunctionLiteralParsing) {
     ASSERT_NE(bodyStmt, nullptr)
         << "function body stmt is not ExpressionStatement.";
 
-    testInfixExpression(bodyStmt->Expression.get(), "x", "+", "y");
+    testInfixExpression(bodyStmt->ExpressionPtr.get(), "x", "+", "y");
 }
 
 TEST(ParserTest, TestFunctionParameterParsing) {
@@ -685,7 +685,7 @@ TEST(ParserTest, TestFunctionParameterParsing) {
         auto stmt = dynamic_cast<ExpressionStatement*>(program->Statements[0].get());
         ASSERT_NE(stmt, nullptr);
 
-        auto function = dynamic_cast<FunctionLiteral*>(stmt->Expression.get());
+        auto function = dynamic_cast<FunctionLiteral*>(stmt->ExpressionPtr.get());
         ASSERT_NE(function, nullptr);
 
         EXPECT_EQ(function->Parameters.size(), tt.expectedParams.size())
@@ -713,7 +713,7 @@ TEST(ParserTest, TestCallExpressionParsing) {
     ASSERT_NE(stmt, nullptr)
         << "stmt is not ExpressionStatement.";
 
-    auto exp = dynamic_cast<CallExpression*>(stmt->Expression.get());
+    auto exp = dynamic_cast<CallExpression*>(stmt->ExpressionPtr.get());
     ASSERT_NE(exp, nullptr)
         << "stmt.expression is not CallExpression.";
 
@@ -764,7 +764,7 @@ TEST(ParserTest, TestCallExpressionParameterParsing) {
         auto stmt = dynamic_cast<ExpressionStatement*>(program->Statements[0].get());
         ASSERT_NE(stmt, nullptr);
 
-        auto exp = dynamic_cast<CallExpression*>(stmt->Expression.get());
+        auto exp = dynamic_cast<CallExpression*>(stmt->ExpressionPtr.get());
         ASSERT_NE(exp, nullptr)
             << "stmt.expression is not CallExpression.";
 
