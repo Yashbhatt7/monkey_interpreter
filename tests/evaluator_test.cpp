@@ -81,3 +81,24 @@ TEST(EvaluatorTest, TestEvalBooleanExpression) {
     }
 }
 
+TEST(EvaluatorTest, TestBangOperator) {
+    struct TestCase {
+        std::string input;
+        bool expected;
+    };
+
+    std::vector<TestCase> tests = {
+        {"!true", false},
+        {"!false", true},
+        {"!5", false},
+        {"!!true", true},
+        {"!!false", false},
+        {"!!5", true},
+    };
+
+    for (const auto& tt : tests) {
+        auto evaluated = testEval(tt.input);
+        testBooleanObject(evaluated.get(), tt.expected);
+    }
+}
+
