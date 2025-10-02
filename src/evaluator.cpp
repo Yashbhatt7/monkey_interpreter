@@ -1,4 +1,6 @@
 #include "evaluator.hpp"
+#include "ast.hpp"
+#include "object.hpp"
 
 std::unique_ptr<Object> evalStatements(const std::vector<std::unique_ptr<Statement>>& stmts) {
     std::unique_ptr<Object> result;
@@ -12,6 +14,7 @@ std::unique_ptr<Object> evalStatements(const std::vector<std::unique_ptr<Stateme
     // std::cout << "did this come out of loop?\n";
     return result;
 }
+
 
 // Reuse static Boolean instances instead of allocating new objects each time
 // Note: understand singltons this(starting from here to the function nativeNullObject) is not fully singlton design...
@@ -31,6 +34,31 @@ std::unique_ptr<Boolean> nativeBoolToBooleanObject(bool input) {
 
 std::unique_ptr<Null> nativeNullObject() {
     return std::make_unique<Null>(NULL_NULL_OBJ);
+}
+
+std::unique_ptr<Object> evalBangOperatorExpression(Object* right) {
+    if (auto boolObj = dynamic_cast<Boolean*>(right)) {
+        if (boolObj->Value == true) {
+            return nativeBoolToBooleanObject(false);
+        } else {
+            return nativeBoolToBooleanObject(true);
+        }
+    }
+
+    if (dynamic_cast<Null*>(right)) {
+        return nativeBoolToBooleanObject(true);
+    }
+
+    return nativeBoolToBooleanObject(false);
+}
+
+
+std::unique_ptr<Object> evalPrefixExpression(std::string op, Object* right) {
+    if (op == "!") {
+        return evalBangOperatorExpression(right);
+    }
+
+    return nativeNullObject();
 }
 
 // Experiment (till now enum design is working)
@@ -60,6 +88,12 @@ std::unique_ptr<Object> Eval(Node* node) {
             auto boolLiteral = static_cast<BooleanLiteral*>(node);
             // std::cout << "will it be BooleanLiteral?\n";
             return nativeBoolToBooleanObject(boolLiteral->Value);
+        }
+        case NodeType::PREFIX_EXPRESSION: {
+            auto prefixExpr = static_cast<PrefixExpression*>(node);
+            // std::cout << "will it be BooleanLiteral?\n";
+            auto right = Eval(prefixExpr->Right.get());
+            return evalPrefixExpression(prefixExpr->Operator, right.get());
         }
     }
 
