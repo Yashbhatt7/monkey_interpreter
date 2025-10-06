@@ -20,7 +20,7 @@ std::unique_ptr<Object> evalStatements(const std::vector<std::unique_ptr<Stateme
 // Note: understand singltons this(starting from here to the function nativeNullObject) is not fully singlton design...
 // here singlton can be done with either raw pointers or shared_ptr<>.
 namespace {
-    static Null NULL_NULL_OBJ{};
+    static Null MONKEY_NULL{};
     static Boolean TRUE_OBJ{true};
     static Boolean FALSE_OBJ{false};
 }
@@ -33,7 +33,7 @@ std::unique_ptr<Boolean> nativeBoolToBooleanObject(bool input) {
 }
 
 std::unique_ptr<Null> nativeNullObject() {
-    return std::make_unique<Null>(NULL_NULL_OBJ);
+    return std::make_unique<Null>(MONKEY_NULL);
 }
 
 std::unique_ptr<Object> evalBangOperatorExpression(Object* right) {
@@ -52,10 +52,75 @@ std::unique_ptr<Object> evalBangOperatorExpression(Object* right) {
     return nativeBoolToBooleanObject(false);
 }
 
+std::unique_ptr<Object> evalMinusPrefixOperatorExpression(Object* right) {
+    auto intObj = dynamic_cast<Integer*>(right);
+    if (!intObj) {
+        return nativeNullObject();
+    }
 
-std::unique_ptr<Object> evalPrefixExpression(std::string op, Object* right) {
+    int64_t value = intObj->Value;
+    return std::make_unique<Integer>(-value);
+}
+
+std::unique_ptr<Object> evalPrefixExpression(const std::string& op, Object* right) {
     if (op == "!") {
         return evalBangOperatorExpression(right);
+    } else if (op == "-") {
+        return evalMinusPrefixOperatorExpression(right);
+    }
+
+    return nativeNullObject();
+}
+
+std::unique_ptr<Object> evalIntegerInfixExpression(const std::string& op, Object* left, Object* right) {
+    auto leftInt = static_cast<Integer*>(left);
+    auto rightInt = static_cast<Integer*>(right);
+
+    int64_t leftVal = leftInt->Value;
+    int64_t rightVal = rightInt->Value;
+
+    if (op == "+") {
+        return std::make_unique<Integer>(leftVal + rightVal);
+    } else if (op == "-") {
+        return std::make_unique<Integer>(leftVal - rightVal);
+    } else if (op == "*") {
+        return std::make_unique<Integer>(leftVal * rightVal);
+    } else if (op == "/") {
+        return std::make_unique<Integer>(leftVal / rightVal);
+    } else if (op == "<") {
+        return nativeBoolToBooleanObject(leftVal < rightVal);
+    } else if (op == ">") {
+        return nativeBoolToBooleanObject(leftVal > rightVal);
+    } else if (op == "==") {
+        return nativeBoolToBooleanObject(leftVal == rightVal);
+    } else if (op == "!=") {
+        return nativeBoolToBooleanObject(leftVal != rightVal);
+    }
+
+    return nativeNullObject();
+}
+
+std::unique_ptr<Object> evalInfixExpression(const std::string& op, Object* left, Object* right) {
+    if (dynamic_cast<Integer*>(left) && dynamic_cast<Integer*>(right)) {
+        return evalIntegerInfixExpression(op, left, right);
+    }
+
+    if (op == "==") {
+        auto leftBool = dynamic_cast<Boolean*>(left);
+        auto rightBool = dynamic_cast<Boolean*>(right);
+        if (leftBool && rightBool) {
+            return nativeBoolToBooleanObject(leftBool->Value == rightBool->Value);
+        }
+        return nativeBoolToBooleanObject(false);
+    }
+
+    if (op == "!=") {
+        auto leftBool = dynamic_cast<Boolean*>(left);
+        auto rightBool = dynamic_cast<Boolean*>(right);
+        if (leftBool && rightBool) {
+            return nativeBoolToBooleanObject(leftBool->Value != rightBool->Value);
+        }
+        return nativeBoolToBooleanObject(true);
     }
 
     return nativeNullObject();
@@ -94,6 +159,12 @@ std::unique_ptr<Object> Eval(Node* node) {
             // std::cout << "will it be BooleanLiteral?\n";
             auto right = Eval(prefixExpr->Right.get());
             return evalPrefixExpression(prefixExpr->Operator, right.get());
+        }
+        case NodeType::INFIX_EXPRESSION: {
+            auto infixExpr = static_cast<InfixExpression*>(node);
+            auto left = Eval(infixExpr->Left.get());
+            auto right = Eval(infixExpr->Right.get());
+            return evalInfixExpression(infixExpr->Operator, left.get(), right.get());
         }
     }
 
