@@ -126,6 +126,29 @@ std::unique_ptr<Object> evalInfixExpression(const std::string& op, Object* left,
     return nativeNullObject();
 }
 
+bool isTruthy(Object* obj) {
+    if (dynamic_cast<Null*>(obj)) {
+        return false;
+    }
+
+    if (auto boolObj = dynamic_cast<Boolean*>(obj)) {
+        return boolObj->Value;
+    }
+    return true;
+}
+
+std::unique_ptr<Object> evalIfExpression(IfExpression* ie) {
+    auto condition = Eval(ie->Condition.get());
+
+    if (isTruthy(condition.get())) {
+        return Eval(ie->Consequence.get());
+    } else if (ie->Alternative != nullptr) {
+        return Eval(ie->Alternative.get());
+    } else {
+        return nativeNullObject();
+    }
+}
+
 // Experiment (till now enum design is working)
 std::unique_ptr<Object> Eval(Node* node) {
     switch (node->Type()) {
@@ -165,6 +188,14 @@ std::unique_ptr<Object> Eval(Node* node) {
             auto left = Eval(infixExpr->Left.get());
             auto right = Eval(infixExpr->Right.get());
             return evalInfixExpression(infixExpr->Operator, left.get(), right.get());
+        }
+        case NodeType::BLOCK_STATEMENT: {
+            auto blockStmt = static_cast<BlockStatement*>(node);
+            return evalStatements(blockStmt->Statements);
+        }
+        case NodeType::IF_EXPRESSION: {
+            auto ifExpr = static_cast<IfExpression*>(node);
+            return evalIfExpression(ifExpr);
         }
     }
 
