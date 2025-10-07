@@ -73,7 +73,14 @@ bool testBooleanObject(Object* obj, bool expected) {
             << ", want= " << expected << "\n";
         return false;
     }
+    return true;
+}
 
+bool testNullObject(Object* obj) {
+    if (!dynamic_cast<Null*>(obj)) {
+        std::cerr << "object is not NULL. got=" << typeid(*obj).name() << "\n";
+        return false;
+    }
     return true;
 }
 
@@ -129,6 +136,32 @@ TEST(EvaluatorTest, TestBangOperator) {
     for (const auto& tt : tests) {
         auto evaluated = testEval(tt.input);
         testBooleanObject(evaluated.get(), tt.expected);
+    }
+}
+
+TEST(EvaluatorTest, TestIfElseExpressions) {
+    struct TestCase {
+        std::string input;
+        std::optional<int64_t> expected;
+    };
+
+    std::vector<TestCase> tests = {
+        {"if (true) { 10 }", 10},
+        {"if (false) { 10 }", std::nullopt},
+        {"if (1) { 10 }", 10},
+        {"if (1 < 2) { 10 }", 10},
+        {"if (1 > 2) { 10 }", std::nullopt},
+        {"if (1 > 2) { 10 } else { 20 }", 20},
+        {"if (1 < 2) { 10 } else { 20 }", 10},
+    };
+
+    for (const auto& tt : tests) {
+        auto evaluated = testEval(tt.input);
+        if (tt.expected.has_value()) {
+            ASSERT_TRUE(testIntegerObject(evaluated.get(), tt.expected.value()));
+        } else {
+            ASSERT_TRUE(testNullObject(evaluated.get()));
+        }
     }
 }
 
