@@ -31,3 +31,17 @@ std::string Null::Inspect() const {
     return "null";
 }
 
+// ReturnValue implementation
+ReturnValue::ReturnValue(std::unique_ptr<Object> value) : Value(std::move(value)) {}
+
+ObjectType ReturnValue::Type() const {
+    return RETURN_VALUE_OBJ;
+}
+
+ObjectType ReturnValue::Inspect() const {
+    return Value->Inspect();
+}
+
+// Error implementation
+
+
