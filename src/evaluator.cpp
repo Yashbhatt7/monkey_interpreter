@@ -2,19 +2,38 @@
 #include "ast.hpp"
 #include "object.hpp"
 
-std::unique_ptr<Object> evalStatements(const std::vector<std::unique_ptr<Statement>>& stmts) {
+std::unique_ptr<Object> evalProgram(const std::vector<std::unique_ptr<Statement>>& stmts) {
     std::unique_ptr<Object> result;
-    // std::cout << "will it call evalStatements?\n";
+    // std::cout << "will it call evalProgram?\n";
 
     for (const auto& statement : stmts) {
         // std::cout << "how many times loop ran?\n";
         result = Eval(statement.get());
+
+        if (auto returnValue = dynamic_cast<ReturnValue*>(result.get())) {
+            // auto get = dynamic_cast<Integer*>(returnValue->Value.get());
+            // std::cout << "\n\n\nwhat we got here: " << get->Value << "\n\n\n";
+            return std::move(returnValue->Value);
+        }
     }
 
     // std::cout << "did this come out of loop?\n";
     return result;
 }
 
+std::unique_ptr<Object> evalBlockStatement(const std::vector<std::unique_ptr<Statement>>& stmts) {
+    std::unique_ptr<Object> result;
+
+    for (const auto& statement : stmts) {
+        result = Eval(statement.get());
+
+        if (result && result->Type() == RETURN_VALUE_OBJ) {
+            return result;
+        }
+    }
+
+    return result;
+}
 
 // Reuse static Boolean instances instead of allocating new objects each time
 // Note: understand singltons this(starting from here to the function nativeNullObject) is not fully singlton design...
@@ -155,47 +174,56 @@ std::unique_ptr<Object> Eval(Node* node) {
         // Program
         case NodeType::PROGRAM: {
             auto program = static_cast<Program*>(node);
-            // std::cout << "will it be program?\n";
-            return evalStatements(program->Statements);
+            std::cout << "Program?\n";
+            return evalProgram(program->Statements);
         }
 
         // Statements
         case NodeType::EXPRESSION_STATEMENT: {
             auto exprStmt = static_cast<ExpressionStatement*>(node);
-            // std::cout << "will it be Statement?\n";
+            std::cout << "expression Statement?\n";
             return Eval(exprStmt->ExpressionPtr.get());
         }
 
         // Expressions
         case NodeType::INTEGER_LITERAL: {
             auto intLiteral = static_cast<IntegerLiteral*>(node);
-            // std::cout << "will it be IntegerLiteral?\n";
+            std::cout << "will it be IntegerLiteral?\n";
             return std::make_unique<Integer>(intLiteral->Value);
         }
         case NodeType::BOOLEAN_LITERAL: {
             auto boolLiteral = static_cast<BooleanLiteral*>(node);
-            // std::cout << "will it be BooleanLiteral?\n";
+            std::cout << "will it be BooleanLiteral?\n";
             return nativeBoolToBooleanObject(boolLiteral->Value);
         }
         case NodeType::PREFIX_EXPRESSION: {
             auto prefixExpr = static_cast<PrefixExpression*>(node);
-            // std::cout << "will it be BooleanLiteral?\n";
+            std::cout << "will it be BooleanLiteral?\n";
             auto right = Eval(prefixExpr->Right.get());
             return evalPrefixExpression(prefixExpr->Operator, right.get());
         }
         case NodeType::INFIX_EXPRESSION: {
             auto infixExpr = static_cast<InfixExpression*>(node);
+            std::cout << "will it be InfixExpression?\n";
             auto left = Eval(infixExpr->Left.get());
             auto right = Eval(infixExpr->Right.get());
             return evalInfixExpression(infixExpr->Operator, left.get(), right.get());
         }
         case NodeType::BLOCK_STATEMENT: {
             auto blockStmt = static_cast<BlockStatement*>(node);
-            return evalStatements(blockStmt->Statements);
+            std::cout << "will it be BlockStatement?\n";
+            return evalBlockStatement(blockStmt->Statements);
         }
         case NodeType::IF_EXPRESSION: {
             auto ifExpr = static_cast<IfExpression*>(node);
+            std::cout << "will it be IFExpression?\n";
             return evalIfExpression(ifExpr);
+        }
+        case NodeType::RETURN_STATEMENT: {
+            auto returnStmt = static_cast<ReturnStatement*>(node);
+            auto val = Eval(returnStmt->ReturnValue.get());
+            std::cout << "will it be ReturnStatement?\n";
+            return std::make_unique<ReturnValue>(std::move(val));
         }
     }
 
