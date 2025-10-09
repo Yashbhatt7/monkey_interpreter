@@ -30,6 +30,30 @@ bool testIntegerObject(Object* obj, int64_t expected) {
     return true;
 }
 
+bool testBooleanObject(Object* obj, bool expected) {
+    auto result = dynamic_cast<Boolean*>(obj);
+
+    if (!result) {
+        std::cerr << "object is not Boolean. got=" << typeid(*obj).name() << std::endl;
+        return false;
+    }
+
+    if (result->Value != expected) {
+        std::cerr << "object has wrong value. got=" << result->Value
+            << ", want= " << expected << "\n";
+        return false;
+    }
+    return true;
+}
+
+bool testNullObject(Object* obj) {
+    if (!dynamic_cast<Null*>(obj)) {
+        std::cerr << "object is not NULL. got=" << typeid(*obj).name() << "\n";
+        return false;
+    }
+    return true;
+}
+
 TEST(EvaluatorTest, TestEvalIntegerExpression) {
     struct TestCase {
         std::string input;
@@ -58,30 +82,6 @@ TEST(EvaluatorTest, TestEvalIntegerExpression) {
         auto evaluated = testEval(tt.input);
         ASSERT_TRUE(testIntegerObject(evaluated.get(), tt.expected));
     }
-}
-
-bool testBooleanObject(Object* obj, bool expected) {
-    auto result = dynamic_cast<Boolean*>(obj);
-
-    if (!result) {
-        std::cerr << "object is not Boolean. got=" << typeid(*obj).name() << std::endl;
-        return false;
-    }
-
-    if (result->Value != expected) {
-        std::cerr << "object has wrong value. got=" << result->Value
-            << ", want= " << expected << "\n";
-        return false;
-    }
-    return true;
-}
-
-bool testNullObject(Object* obj) {
-    if (!dynamic_cast<Null*>(obj)) {
-        std::cerr << "object is not NULL. got=" << typeid(*obj).name() << "\n";
-        return false;
-    }
-    return true;
 }
 
 TEST(EvaluatorTest, TestEvalBooleanExpression) {
@@ -135,7 +135,8 @@ TEST(EvaluatorTest, TestBangOperator) {
 
     for (const auto& tt : tests) {
         auto evaluated = testEval(tt.input);
-        testBooleanObject(evaluated.get(), tt.expected);
+        EXPECT_TRUE(testBooleanObject(evaluated.get(), tt.expected))
+            << "Failed testing input: " << tt.input;
     }
 }
 
@@ -162,6 +163,34 @@ TEST(EvaluatorTest, TestIfElseExpressions) {
         } else {
             ASSERT_TRUE(testNullObject(evaluated.get()));
         }
+    }
+}
+
+TEST(EvaluatorTest, TestReturnStatements) {
+    struct TestCase {
+        std::string input;
+        int64_t expected;
+    };
+
+    std::vector<TestCase> tests = {
+        {"return 10;", 10},
+        {"return 10; 9;", 10},
+        {"return 2 * 5; 9;", 10},
+        {"9; return 2 * 5; 9;", 10},
+        { R"(
+            if (10 > 1) {
+                if (10 > 1) {
+                    return 10;
+                }
+                return 1;
+            }
+        )", 10},
+    };
+
+    for (const auto& tt : tests) {
+        auto evaluated = testEval(tt.input);
+        EXPECT_TRUE(testIntegerObject(evaluated.get(), tt.expected))
+            << "Failed testing input: " << tt.input;
     }
 }
 
