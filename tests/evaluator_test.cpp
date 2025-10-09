@@ -194,7 +194,7 @@ TEST(EvaluatorTest, TestReturnStatements) {
     }
 }
 
-TEST(EvaluatorTest, ErrorHandling) {
+TEST(EvaluatorTest, TestErrorHandling) {
     struct TestCase {
         std::string input;
         std::string expectedMessage;
