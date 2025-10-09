@@ -43,5 +43,13 @@ ObjectType ReturnValue::Inspect() const {
 }
 
 // Error implementation
+Error::Error(const std::string& message) : Message(message) {}
 
+ObjectType Error::Type() const {
+    return ERROR_OBJ;
+}
+
+ObjectType Error::Inspect() const {
+    return "Error: " + Message;
+}
 
