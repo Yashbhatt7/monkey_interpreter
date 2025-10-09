@@ -1,6 +1,19 @@
+#include<fmt/format.h>
 #include "evaluator.hpp"
 #include "ast.hpp"
 #include "object.hpp"
+
+template<typename... Args>
+std::unique_ptr<Error> newError(fmt::format_string<Args...> format, Args&&... args) {
+    return std::make_unique<Error>(fmt::format(format, std::forward<Args>(args)...));
+}
+
+bool isError(Object* obj) {
+    if (obj != nullptr) {
+        return obj->Type() == ERROR_OBJ;
+    }
+    return false;
+}
 
 std::unique_ptr<Object> evalProgram(const std::vector<std::unique_ptr<Statement>>& stmts) {
     std::unique_ptr<Object> result;
@@ -15,6 +28,10 @@ std::unique_ptr<Object> evalProgram(const std::vector<std::unique_ptr<Statement>
             // std::cout << "\n\n\nwhat we got here: " << get->Value << "\n\n\n";
             return std::move(returnValue->Value);
         }
+
+        if (auto returnValue = dynamic_cast<Error*>(result.get())) {
+            return result;
+        }
     }
 
     // std::cout << "did this come out of loop?\n";
@@ -27,8 +44,11 @@ std::unique_ptr<Object> evalBlockStatement(const std::vector<std::unique_ptr<Sta
     for (const auto& statement : stmts) {
         result = Eval(statement.get());
 
-        if (result && result->Type() == RETURN_VALUE_OBJ) {
-            return result;
+        if (result) {
+            ObjectType rt = result->Type();
+            if (rt == RETURN_VALUE_OBJ || rt == ERROR_OBJ) {
+                return result;
+            }
         }
     }
 
@@ -74,7 +94,7 @@ std::unique_ptr<Object> evalBangOperatorExpression(Object* right) {
 std::unique_ptr<Object> evalMinusPrefixOperatorExpression(Object* right) {
     auto intObj = dynamic_cast<Integer*>(right);
     if (!intObj) {
-        return nativeNullObject();
+        return newError("unknown operator: -{}", right->Type().c_str());
     }
 
     int64_t value = intObj->Value;
@@ -88,7 +108,7 @@ std::unique_ptr<Object> evalPrefixExpression(const std::string& op, Object* righ
         return evalMinusPrefixOperatorExpression(right);
     }
 
-    return nativeNullObject();
+    return newError("unknown operator: {}{}", op.c_str(), right->Type().c_str());
 }
 
 std::unique_ptr<Object> evalIntegerInfixExpression(const std::string& op, Object* left, Object* right) {
@@ -116,12 +136,16 @@ std::unique_ptr<Object> evalIntegerInfixExpression(const std::string& op, Object
         return nativeBoolToBooleanObject(leftVal != rightVal);
     }
 
-    return nativeNullObject();
+    return newError("unknown operator: {} {} {}", left->Type().c_str(), op.c_str(), right->Type().c_str());
 }
 
 std::unique_ptr<Object> evalInfixExpression(const std::string& op, Object* left, Object* right) {
     if (dynamic_cast<Integer*>(left) && dynamic_cast<Integer*>(right)) {
         return evalIntegerInfixExpression(op, left, right);
+    }
+
+    if (left->Type() != right->Type()) {
+        return newError("type mismatch: {} {} {}", left->Type().c_str(), op.c_str(), right->Type().c_str());
     }
 
     if (op == "==") {
@@ -142,7 +166,7 @@ std::unique_ptr<Object> evalInfixExpression(const std::string& op, Object* left,
         return nativeBoolToBooleanObject(true);
     }
 
-    return nativeNullObject();
+    return newError("unknown operator: {} {} {}", left->Type().c_str(), op.c_str(), right->Type().c_str());
 }
 
 bool isTruthy(Object* obj) {
@@ -159,6 +183,10 @@ bool isTruthy(Object* obj) {
 std::unique_ptr<Object> evalIfExpression(IfExpression* ie) {
     auto condition = Eval(ie->Condition.get());
 
+    if (isError(condition.get())) {
+        return condition;
+    }
+
     if (isTruthy(condition.get())) {
         return Eval(ie->Consequence.get());
     } else if (ie->Alternative != nullptr) {
@@ -174,55 +202,71 @@ std::unique_ptr<Object> Eval(Node* node) {
         // Program
         case NodeType::PROGRAM: {
             auto program = static_cast<Program*>(node);
-            std::cout << "Program?\n";
+            // std::cout << "Program?\n";
             return evalProgram(program->Statements);
         }
 
         // Statements
         case NodeType::EXPRESSION_STATEMENT: {
             auto exprStmt = static_cast<ExpressionStatement*>(node);
-            std::cout << "expression Statement?\n";
+            // std::cout << "expression Statement?\n";
             return Eval(exprStmt->ExpressionPtr.get());
         }
 
         // Expressions
         case NodeType::INTEGER_LITERAL: {
             auto intLiteral = static_cast<IntegerLiteral*>(node);
-            std::cout << "will it be IntegerLiteral?\n";
+            // std::cout << "will it be IntegerLiteral?\n";
             return std::make_unique<Integer>(intLiteral->Value);
         }
         case NodeType::BOOLEAN_LITERAL: {
             auto boolLiteral = static_cast<BooleanLiteral*>(node);
-            std::cout << "will it be BooleanLiteral?\n";
+            // std::cout << "will it be BooleanLiteral?\n";
             return nativeBoolToBooleanObject(boolLiteral->Value);
         }
         case NodeType::PREFIX_EXPRESSION: {
             auto prefixExpr = static_cast<PrefixExpression*>(node);
-            std::cout << "will it be BooleanLiteral?\n";
             auto right = Eval(prefixExpr->Right.get());
+
+            if (isError(right.get())) {
+                return right;
+            }
+            // std::cout << "will it be BooleanLiteral?\n";
             return evalPrefixExpression(prefixExpr->Operator, right.get());
         }
         case NodeType::INFIX_EXPRESSION: {
             auto infixExpr = static_cast<InfixExpression*>(node);
-            std::cout << "will it be InfixExpression?\n";
+            // std::cout << "will it be InfixExpression?\n";
             auto left = Eval(infixExpr->Left.get());
+            if (isError(left.get())) {
+                return left;
+            }
+
             auto right = Eval(infixExpr->Right.get());
+            if (isError(right.get())) {
+                return right;
+            }
+
             return evalInfixExpression(infixExpr->Operator, left.get(), right.get());
         }
         case NodeType::BLOCK_STATEMENT: {
             auto blockStmt = static_cast<BlockStatement*>(node);
-            std::cout << "will it be BlockStatement?\n";
+            // std::cout << "will it be BlockStatement?\n";
             return evalBlockStatement(blockStmt->Statements);
         }
         case NodeType::IF_EXPRESSION: {
             auto ifExpr = static_cast<IfExpression*>(node);
-            std::cout << "will it be IFExpression?\n";
+            // std::cout << "will it be IFExpression?\n";
             return evalIfExpression(ifExpr);
         }
         case NodeType::RETURN_STATEMENT: {
             auto returnStmt = static_cast<ReturnStatement*>(node);
             auto val = Eval(returnStmt->ReturnValue.get());
-            std::cout << "will it be ReturnStatement?\n";
+
+            if (isError(val.get())) {
+                return val;
+            }
+            // std::cout << "will it be ReturnStatement?\n";
             return std::make_unique<ReturnValue>(std::move(val));
         }
     }
