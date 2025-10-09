@@ -194,3 +194,62 @@ TEST(EvaluatorTest, TestReturnStatements) {
     }
 }
 
+TEST(EvaluatorTest, ErrorHandling) {
+    struct TestCase {
+        std::string input;
+        std::string expectedMessage;
+    };
+
+    std::vector<TestCase> tests = {
+        {
+            "5 + true;",
+            "type mismatch: INTEGER + BOOLEAN"
+        },
+        {
+            "5 + true; 5;",
+            "type mismatch: INTEGER + BOOLEAN"
+        },
+        {
+            "-true",
+            "unknown operator: -BOOLEAN"
+        },
+        {
+            "true + false;",
+            "unknown operator: BOOLEAN + BOOLEAN"
+        },
+        {
+            "5; true + false; 5",
+            "unknown operator: BOOLEAN + BOOLEAN"
+        },
+        {
+            "if (10 > 1) { true + false; }",
+            "unknown operator: BOOLEAN + BOOLEAN"
+        },
+        {
+            R"(
+            if (10 > 1) {
+                if (10 > 1) {
+                    return true + false;
+                }
+                return 1;
+            }
+        )",
+            "unknown operator: BOOLEAN + BOOLEAN"
+        }
+    };
+
+    for (const auto& tt : tests) {
+        auto evaluated = testEval(tt.input);
+
+        auto* errObj = dynamic_cast<Error*>(evaluated.get());
+        if (!errObj) {
+            FAIL() << "no error object returned. got="
+                   << evaluated->Type() << "(" << evaluated->Inspect() << ")";
+            continue;
+        }
+
+        EXPECT_EQ(errObj->Message, tt.expectedMessage)
+            << "wrong error message for input: " << tt.input;
+    }
+}
+
