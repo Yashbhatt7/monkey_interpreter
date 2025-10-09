@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 3.16)
-project(MonkeyInterpreterTests)
+project(MonkeyInterpreter)
 set(CMAKE_CXX_STANDARD 17)
 
 include_directories(src)
+
+find_package(fmt REQUIRED)
 
 add_library(monkey_interpreter
     src/lexer.cpp
@@ -13,16 +15,17 @@ add_library(monkey_interpreter
     src/repl.cpp
 )
 
+target_link_libraries(monkey_interpreter fmt::fmt)
+
 add_executable(monkey src/main.cpp)
 target_link_libraries(monkey monkey_interpreter)
 
 find_package(GTest REQUIRED)
-include_directories(${GTEST_INCLUDE_DIRS})
 
 add_executable(evaluator_test tests/evaluator_test.cpp)
-
 target_link_libraries(evaluator_test
     monkey_interpreter
     GTest::gtest_main
     GTest::gtest
 )
+
