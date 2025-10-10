@@ -236,10 +236,10 @@ TEST(EvaluatorTest, TestErrorHandling) {
         )",
             "unknown operator: BOOLEAN + BOOLEAN"
         },
-        // {
-        //     "foobar",
-        //     "identifier not found: foobar",
-        // },
+        {
+            "foobar",
+            "identifier not found: foobar",
+        },
     };
 
     for (const auto& tt : tests) {
@@ -257,22 +257,22 @@ TEST(EvaluatorTest, TestErrorHandling) {
     }
 }
 
-// TEST(EvaluatorTest, TestLetStatement) {
-//     struct TestCase {
-//         std::string input;
-//         int64_t expected;
-//     };
-//
-//     std::vector<TestCase> tests {
-//         {"let a = 5; a;", 5},
-//         {"let a = 5 * 5; a;", 25},
-//         {"let a = 5; let b = a; b;", 5},
-//         {"let a = 5; let b = a; let c = a + b + 5; c;", 15},
-//     };
-//
-//     for (const auto& tt : tests) {
-//         auto evaluated = testEval(tt.input);
-//         ASSERT_TRUE(testIntegerObject(evaluated.get(), tt.expected));
-//     }
-// }
-//
+TEST(EvaluatorTest, TestLetStatement) {
+    struct TestCase {
+        std::string input;
+        int64_t expected;
+    };
+
+    std::vector<TestCase> tests {
+        {"let a = 5; a;", 5},
+        {"let a = 5 * 5; a;", 25},
+        {"let a = 5; let b = a; b;", 5},
+        {"let a = 5; let b = a; let c = a + b + 5; c;", 15},
+    };
+
+    for (const auto& tt : tests) {
+        auto evaluated = testEval(tt.input);
+        ASSERT_TRUE(testIntegerObject(evaluated.get(), tt.expected));
+    }
+}
+
