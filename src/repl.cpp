@@ -9,6 +9,7 @@ const std::string Prompt = ">> ";
 
 void Start(std::istream& in, std::ostream& out) {
     std::string line;
+    auto env = NewEnvironment();
 
     while (true) {
         out << Prompt;
@@ -27,10 +28,9 @@ void Start(std::istream& in, std::ostream& out) {
             continue;
         }
 
-        auto evaluated = Eval(program.get());
+        auto evaluated = Eval(program.get(), env.get());
         if (evaluated != nullptr) {
-            out << evaluated->Inspect();
-            out << "\n";
+            out << evaluated->Inspect() << "\n";
         }
 
         // out << program->String() << "\n";

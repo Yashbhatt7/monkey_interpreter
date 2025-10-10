@@ -13,6 +13,7 @@ add_library(monkey_interpreter
     src/object.cpp
     src/ast.cpp
     src/repl.cpp
+    src/environment.cpp
 )
 
 target_link_libraries(monkey_interpreter fmt::fmt)

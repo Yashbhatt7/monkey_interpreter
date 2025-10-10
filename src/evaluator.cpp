@@ -22,7 +22,7 @@ std::unique_ptr<Object> evalProgram(const std::vector<std::unique_ptr<Statement>
 
     for (const auto& statement : stmts) {
         // std::cout << "how many times loop ran?\n";
-        result = Eval(statement.get());
+        result = Eval(statement.get(), env);
 
         if (auto returnValue = dynamic_cast<ReturnValue*>(result.get())) {
             // auto get = dynamic_cast<Integer*>(returnValue->Value.get());
@@ -43,7 +43,7 @@ std::unique_ptr<Object> evalBlockStatement(const std::vector<std::unique_ptr<Sta
     std::unique_ptr<Object> result;
 
     for (const auto& statement : stmts) {
-        result = Eval(statement.get());
+        result = Eval(statement.get(), env);
 
         if (result) {
             ObjectType rt = result->Type();
@@ -182,16 +182,16 @@ bool isTruthy(Object* obj) {
 }
 
 std::unique_ptr<Object> evalIfExpression(IfExpression* ie, Environment* env) {
-    auto condition = Eval(ie->Condition.get());
+    auto condition = Eval(ie->Condition.get(), env);
 
     if (isError(condition.get())) {
         return condition;
     }
 
     if (isTruthy(condition.get())) {
-        return Eval(ie->Consequence.get());
+        return Eval(ie->Consequence.get(), env);
     } else if (ie->Alternative != nullptr) {
-        return Eval(ie->Alternative.get());
+        return Eval(ie->Alternative.get(), env);
     } else {
         return nativeNullObject();
     }
@@ -260,7 +260,7 @@ std::unique_ptr<Object> Eval(Node* node, Environment* env) {
                 return left;
             }
 
-            auto right = Eval(infixExpr->Right.get());
+            auto right = Eval(infixExpr->Right.get(), env);
             if (isError(right.get())) {
                 return right;
             }
@@ -296,7 +296,6 @@ std::unique_ptr<Object> Eval(Node* node, Environment* env) {
             }
 
             env->Set(letStmt->Name->Value, std::move(val));
-            return nativeNullObject();
         }
         case NodeType::IDENTIFIER: {
             auto ident = static_cast<Identifier*>(node);

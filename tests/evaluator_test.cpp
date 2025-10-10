@@ -11,7 +11,9 @@ std::unique_ptr<Object> testEval(const std::string& input) {
     auto lexer = std::make_unique<Lexer>(input);
     Parser parser(std::move(lexer));
     auto program = parser.ParseProgram();
-    return Eval(program.get());
+    auto env = NewEnvironment();
+
+    return Eval(program.get(), env.get());
 }
 
 bool testIntegerObject(Object* obj, int64_t expected) {
