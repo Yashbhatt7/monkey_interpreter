@@ -2,6 +2,7 @@
 #include "evaluator.hpp"
 #include "ast.hpp"
 #include "object.hpp"
+#include "environment.hpp"
 
 template<typename... Args>
 std::unique_ptr<Error> newError(fmt::format_string<Args...> format, Args&&... args) {
@@ -15,7 +16,7 @@ bool isError(Object* obj) {
     return false;
 }
 
-std::unique_ptr<Object> evalProgram(const std::vector<std::unique_ptr<Statement>>& stmts) {
+std::unique_ptr<Object> evalProgram(const std::vector<std::unique_ptr<Statement>>& stmts, Environment* env) {
     std::unique_ptr<Object> result;
     // std::cout << "will it call evalProgram?\n";
 
@@ -38,7 +39,7 @@ std::unique_ptr<Object> evalProgram(const std::vector<std::unique_ptr<Statement>
     return result;
 }
 
-std::unique_ptr<Object> evalBlockStatement(const std::vector<std::unique_ptr<Statement>>& stmts) {
+std::unique_ptr<Object> evalBlockStatement(const std::vector<std::unique_ptr<Statement>>& stmts, Environment* env) {
     std::unique_ptr<Object> result;
 
     for (const auto& statement : stmts) {
@@ -180,7 +181,7 @@ bool isTruthy(Object* obj) {
     return true;
 }
 
-std::unique_ptr<Object> evalIfExpression(IfExpression* ie) {
+std::unique_ptr<Object> evalIfExpression(IfExpression* ie, Environment* env) {
     auto condition = Eval(ie->Condition.get());
 
     if (isError(condition.get())) {
@@ -196,21 +197,38 @@ std::unique_ptr<Object> evalIfExpression(IfExpression* ie) {
     }
 }
 
-// Experiment (till now enum design is working)
-std::unique_ptr<Object> Eval(Node* node) {
+std::unique_ptr<Object> evalIdentifier(Identifier* node, Environment* env) {
+    Object* val = env->Get(node->Value);
+
+    if (!val) {
+        return newError("identifier not found: {}", node->Value);
+    }
+
+    if (auto intObj = dynamic_cast<Integer*>(val)) {
+        return std::make_unique<Integer>(*intObj);
+    } else if (auto boolObj = dynamic_cast<Boolean*>(val)) {
+        return std::make_unique<Boolean>(*boolObj);
+    } else if (auto nullObj = dynamic_cast<Null*>(val)) {
+        return std::make_unique<Null>(*nullObj);
+    }
+
+    return newError("unsupported object type in identifier");
+}
+
+std::unique_ptr<Object> Eval(Node* node, Environment* env) {
     switch (node->Type()) {
         // Program
         case NodeType::PROGRAM: {
             auto program = static_cast<Program*>(node);
             // std::cout << "Program?\n";
-            return evalProgram(program->Statements);
+            return evalProgram(program->Statements, env);
         }
 
         // Statements
         case NodeType::EXPRESSION_STATEMENT: {
             auto exprStmt = static_cast<ExpressionStatement*>(node);
             // std::cout << "expression Statement?\n";
-            return Eval(exprStmt->ExpressionPtr.get());
+            return Eval(exprStmt->ExpressionPtr.get(), env);
         }
 
         // Expressions
@@ -226,7 +244,7 @@ std::unique_ptr<Object> Eval(Node* node) {
         }
         case NodeType::PREFIX_EXPRESSION: {
             auto prefixExpr = static_cast<PrefixExpression*>(node);
-            auto right = Eval(prefixExpr->Right.get());
+            auto right = Eval(prefixExpr->Right.get(), env);
 
             if (isError(right.get())) {
                 return right;
@@ -237,7 +255,7 @@ std::unique_ptr<Object> Eval(Node* node) {
         case NodeType::INFIX_EXPRESSION: {
             auto infixExpr = static_cast<InfixExpression*>(node);
             // std::cout << "will it be InfixExpression?\n";
-            auto left = Eval(infixExpr->Left.get());
+            auto left = Eval(infixExpr->Left.get(), env);
             if (isError(left.get())) {
                 return left;
             }
@@ -252,16 +270,16 @@ std::unique_ptr<Object> Eval(Node* node) {
         case NodeType::BLOCK_STATEMENT: {
             auto blockStmt = static_cast<BlockStatement*>(node);
             // std::cout << "will it be BlockStatement?\n";
-            return evalBlockStatement(blockStmt->Statements);
+            return evalBlockStatement(blockStmt->Statements, env);
         }
         case NodeType::IF_EXPRESSION: {
             auto ifExpr = static_cast<IfExpression*>(node);
             // std::cout << "will it be IFExpression?\n";
-            return evalIfExpression(ifExpr);
+            return evalIfExpression(ifExpr, env);
         }
         case NodeType::RETURN_STATEMENT: {
             auto returnStmt = static_cast<ReturnStatement*>(node);
-            auto val = Eval(returnStmt->ReturnValue.get());
+            auto val = Eval(returnStmt->ReturnValue.get(), env);
 
             if (isError(val.get())) {
                 return val;
@@ -269,31 +287,23 @@ std::unique_ptr<Object> Eval(Node* node) {
             // std::cout << "will it be ReturnStatement?\n";
             return std::make_unique<ReturnValue>(std::move(val));
         }
+        case NodeType::LET_STATEMENT: {
+            auto letStmt = static_cast<LetStatement*>(node);
+            auto val = Eval(letStmt->Value.get(), env);
+
+            if (isError(val.get())) {
+                return val;
+            }
+
+            env->Set(letStmt->Name->Value, std::move(val));
+            return nativeNullObject();
+        }
+        case NodeType::IDENTIFIER: {
+            auto ident = static_cast<Identifier*>(node);
+            return evalIdentifier(ident, env);
+        }
     }
 
     return nativeNullObject();
 }
-
-
-
-// std::unique_ptr<Object> Eval(Node* node) {
-//     // Program
-//     if (auto program = dynamic_cast<Program*>(node)) {
-//         return evalStatements(program->Statements);
-//     }
-//
-//     // Statements
-//     if (auto exprStmt = dynamic_cast<ExpressionStatement*>(node)) {
-//         return Eval(exprStmt->Expression.get());
-//     }
-//
-//     // Expressions
-//     if (auto intLiteral = dynamic_cast<IntegerLiteral*>(node)) {
-//         return std::make_unique<Integer>(intLiteral->Value);
-//     } else if (auto boolLiteral = dynamic_cast<BooleanLiteral*>(node)) {
-//         return std::make_unique<Boolean>(boolLiteral->Value);
-//     }
-//
-//     return nullptr;
-// }
 
