@@ -72,23 +72,23 @@ public:
 };
 
 // Tracer functions
-static int trace_level = 0;
-std::string get_indent();
-void trace(const std::string& name);
-void untrace(const std::string& name);
-
-class Trace {
-private:
-    std::string function_name;
-
-public:
-    explicit Trace(const std::string& name) : function_name(name) {
-        trace(name);
-    }
-
-    ~Trace() {
-        untrace(function_name);
-    }
-};
+// static int trace_level = 0;
+// std::string get_indent();
+// void trace(const std::string& name);
+// void untrace(const std::string& name);
+//
+// class Trace {
+// private:
+//     std::string function_name;
+//
+// public:
+//     explicit Trace(const std::string& name) : function_name(name) {
+//         trace(name);
+//     }
+//
+//     ~Trace() {
+//         untrace(function_name);
+//     }
+// };
 
 #endif // PARSER_HPP

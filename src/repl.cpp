@@ -33,7 +33,7 @@ void Start(std::istream& in, std::ostream& out) {
             out << "\n";
         }
 
-        out << program->String() << "\n";
+        // out << program->String() << "\n";
     }
 }
 

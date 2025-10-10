@@ -460,18 +460,17 @@ void Parser::registerInfix(TokenType tokenType, infixParseFn fn) {
 }
 
 // Tracer functions
-std::string get_indent() {
-    return std::string(trace_level * 2, ' ');
-}
-
-void trace(const std::string& name) {
-    std::cout << get_indent() << "BEGIN " << name << "\n";
-    ++trace_level;
-}
-
-void untrace(const std::string& name) {
-    --trace_level;
-    std::cout << get_indent() << "END " << name << "\n";
-}
-
+// std::string get_indent() {
+//     return std::string(trace_level * 2, ' ');
+// }
+//
+// void trace(const std::string& name) {
+//     std::cout << get_indent() << "BEGIN " << name << "\n";
+//     ++trace_level;
+// }
+//
+// void untrace(const std::string& name) {
+//     --trace_level;
+//     std::cout << get_indent() << "END " << name << "\n";
+// }
 
