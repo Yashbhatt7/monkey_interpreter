@@ -6,7 +6,7 @@
 #include "object.hpp"
 #include "environment.hpp"
 
-std::unique_ptr<Object> Eval(Node* node, Environment* env);
+std::unique_ptr<Object> Eval(Node* node, std::shared_ptr<Environment> env);
 
 #endif //EVALUATOR_HPP
 
