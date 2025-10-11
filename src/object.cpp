@@ -1,4 +1,5 @@
 #include "object.hpp"
+#include "ast.hpp"
 
 // Integer implementation
 Integer::Integer(int64_t value) : Value(value) {}
@@ -38,7 +39,7 @@ ObjectType ReturnValue::Type() const {
     return RETURN_VALUE_OBJ;
 }
 
-ObjectType ReturnValue::Inspect() const {
+std::string ReturnValue::Inspect() const {
     return Value->Inspect();
 }
 
@@ -49,7 +50,32 @@ ObjectType Error::Type() const {
     return ERROR_OBJ;
 }
 
-ObjectType Error::Inspect() const {
+std::string Error::Inspect() const {
     return "Error: " + Message;
+}
+
+// Function implementation
+Function::Function(std::vector<std::string> params, BlockStatement* body, std::shared_ptr<Environment> env)
+    : Parameters(std::move(params)), Body(body), Env(env) {}
+
+ObjectType Function::Type() const {
+    return FUNCTION_OBJ;
+}
+
+std::string Function::Inspect() const {
+    std::string out = "fn(";
+
+    for (size_t i = 0; i < Parameters.size(); ++i) {
+        out += Parameters[i];
+        if (i < Parameters.size() - 1) {
+            out += ", ";
+        }
+    }
+
+    out += ") {\n";
+    out += Body->String();
+    out += "\n}";
+
+    return out;
 }
 

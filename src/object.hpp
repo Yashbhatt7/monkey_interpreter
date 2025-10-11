@@ -1,9 +1,14 @@
 #ifndef OBJECT_HPP
 #define OBJECT_HPP
 
+#include<vector>
 #include<cstdint>
 #include<string>
 #include<memory>
+
+class Identifier;
+class BlockStatement;
+class Environment;
 
 using ObjectType = std::string;
 
@@ -12,6 +17,7 @@ inline const ObjectType BOOLEAN_OBJ = "BOOLEAN";
 inline const ObjectType NULL_OBJ    = "NULL";
 inline const ObjectType RETURN_VALUE_OBJ  = "RETURN_VALUE";
 inline const ObjectType ERROR_OBJ = "ERROR";
+inline const ObjectType FUNCTION_OBJ = "FUNCTION";
 
 class Object {
 public:
@@ -59,6 +65,17 @@ public:
     std::string Message;
 
     Error(const std::string& Message);
+    ObjectType Type() const override;
+    std::string Inspect() const override;
+};
+
+class Function : public Object {
+public:
+    std::vector<std::string> Parameters;
+    BlockStatement* Body;
+    std::shared_ptr<Environment> Env;
+
+    Function(std::vector<std::string> params, BlockStatement* body, std::shared_ptr<Environment> env);
     ObjectType Type() const override;
     std::string Inspect() const override;
 };
