@@ -16,7 +16,7 @@ bool isError(Object* obj) {
     return false;
 }
 
-std::unique_ptr<Object> evalProgram(const std::vector<std::unique_ptr<Statement>>& stmts, Environment* env) {
+std::unique_ptr<Object> evalProgram(const std::vector<std::unique_ptr<Statement>>& stmts, std::shared_ptr<Environment> env) {
     std::unique_ptr<Object> result;
     // std::cout << "will it call evalProgram?\n";
 
@@ -39,7 +39,7 @@ std::unique_ptr<Object> evalProgram(const std::vector<std::unique_ptr<Statement>
     return result;
 }
 
-std::unique_ptr<Object> evalBlockStatement(const std::vector<std::unique_ptr<Statement>>& stmts, Environment* env) {
+std::unique_ptr<Object> evalBlockStatement(const std::vector<std::unique_ptr<Statement>>& stmts, std::shared_ptr<Environment> env) {
     std::unique_ptr<Object> result;
 
     for (const auto& statement : stmts) {
@@ -181,7 +181,7 @@ bool isTruthy(Object* obj) {
     return true;
 }
 
-std::unique_ptr<Object> evalIfExpression(IfExpression* ie, Environment* env) {
+std::unique_ptr<Object> evalIfExpression(IfExpression* ie, std::shared_ptr<Environment> env) {
     auto condition = Eval(ie->Condition.get(), env);
 
     if (isError(condition.get())) {
@@ -197,7 +197,7 @@ std::unique_ptr<Object> evalIfExpression(IfExpression* ie, Environment* env) {
     }
 }
 
-std::unique_ptr<Object> evalIdentifier(Identifier* node, Environment* env) {
+std::unique_ptr<Object> evalIdentifier(Identifier* node, std::shared_ptr<Environment> env) {
     Object* val = env->Get(node->Value);
 
     if (!val) {
@@ -210,12 +210,63 @@ std::unique_ptr<Object> evalIdentifier(Identifier* node, Environment* env) {
         return std::make_unique<Boolean>(*boolObj);
     } else if (auto nullObj = dynamic_cast<Null*>(val)) {
         return std::make_unique<Null>(*nullObj);
+    } else if (auto funcObj = dynamic_cast<Function*>(val)) {
+        return std::make_unique<Function>(funcObj->Parameters, funcObj->Body, funcObj->Env);
     }
 
     return newError("unsupported object type in identifier");
 }
 
-std::unique_ptr<Object> Eval(Node* node, Environment* env) {
+std::vector<std::unique_ptr<Object>> evalExpressions(const std::vector<std::unique_ptr<Expression>>& exps, std::shared_ptr<Environment> env) {
+    std::vector<std::unique_ptr<Object>> result;
+
+    for (const auto& e : exps) {
+        auto evaluated = Eval(e.get(), env);
+        if (isError(evaluated.get())) {
+            std::vector<std::unique_ptr<Object>> errorResult;
+            errorResult.push_back(std::move(evaluated));
+            return errorResult;
+        }
+        result.push_back(std::move(evaluated));
+    }
+
+    return result;
+}
+
+std::shared_ptr<Environment> extendFunctionEnv(Function* fn, std::vector<std::unique_ptr<Object>> args) {
+    auto env = NewEnclosedEnvironment(fn->Env);
+
+    for (size_t paramIdx = 0; paramIdx < fn->Parameters.size(); ++paramIdx) {
+        env->Set(fn->Parameters[paramIdx], std::move(args[paramIdx]));
+    }
+
+    return env;
+}
+
+std::unique_ptr<Object> unwrapReturnValue(std::unique_ptr<Object> obj) {
+    if (auto returnValue = dynamic_cast<ReturnValue*>(obj.get())) {
+        return std::move(returnValue->Value);
+    }
+
+    return obj;
+}
+
+std::unique_ptr<Object> applyFunction(std::unique_ptr<Object> fn, std::vector<std::unique_ptr<Object>> args) {
+    auto function = dynamic_cast<Function*>(fn.get());
+    if (!function) {
+        return newError("not a function: {}", fn->Type());
+    }
+
+    if (function->Parameters.size() != args.size()) {
+        return newError("wrong number of arguments: expected {}, got{}", function->Parameters.size(), args.size());
+    }
+
+    auto extendedEnv = extendFunctionEnv(function, std::move(args));
+    auto evaluated = Eval(function->Body, extendedEnv);
+    return unwrapReturnValue(std::move(evaluated));
+}
+
+std::unique_ptr<Object> Eval(Node* node, std::shared_ptr<Environment> env) {
     switch (node->Type()) {
         // Program
         case NodeType::PROGRAM: {
@@ -296,10 +347,39 @@ std::unique_ptr<Object> Eval(Node* node, Environment* env) {
             }
 
             env->Set(letStmt->Name->Value, std::move(val));
+            return nativeNullObject();
         }
         case NodeType::IDENTIFIER: {
             auto ident = static_cast<Identifier*>(node);
             return evalIdentifier(ident, env);
+        }
+        case NodeType::FUNCTION_LITERAL: {
+            auto funcLit = static_cast<FunctionLiteral*>(node);
+
+            std::vector<std::string> params;
+            for (const auto& p : funcLit->Parameters) {
+                params.push_back(p->Value);
+            }
+
+            BlockStatement* body = funcLit->Body.get();
+
+            return std::make_unique<Function>(params, body, env);
+        }
+        case NodeType::CALL_EXPRESSION: {
+            auto callExpr = static_cast<CallExpression*>(node);
+
+            auto function = Eval(callExpr->Function.get(), env);
+
+            if (isError(function.get())) {
+                return function;
+            }
+
+            auto args = evalExpressions(callExpr->Arguments, env);
+            if (args.size() == 1 && isError(args[0].get())) {
+                return std::move(args[0]);
+            }
+
+            return applyFunction(std::move(function), std::move(args));
         }
     }
 
