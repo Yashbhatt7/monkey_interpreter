@@ -10,6 +10,7 @@ const std::string Prompt = ">> ";
 void Start(std::istream& in, std::ostream& out) {
     std::string line;
     auto env = NewEnvironment();
+    std::vector<std::unique_ptr<Program>> programs;
 
     while (true) {
         out << Prompt;
@@ -28,8 +29,12 @@ void Start(std::istream& in, std::ostream& out) {
             continue;
         }
 
-        auto evaluated = Eval(program.get(), env.get());
-        if (evaluated != nullptr) {
+        Program* programPtr = program.get();
+
+        programs.push_back(std::move(program));
+
+        auto evaluated = Eval(programPtr, env);
+        if (evaluated && !dynamic_cast<Null*>(evaluated.get())) {
             out << evaluated->Inspect() << "\n";
         }
 
