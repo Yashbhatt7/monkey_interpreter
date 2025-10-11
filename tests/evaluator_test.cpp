@@ -7,13 +7,25 @@
 #include "../src/object.hpp"
 #include "../src/evaluator.hpp"
 
-std::unique_ptr<Object> testEval(const std::string& input) {
+struct TestContext {
+    std::unique_ptr<Program> program;
+    std::shared_ptr<Environment> env;
+    std::unique_ptr<Object> result;
+};
+
+TestContext testEvalWithContext(const std::string& input) {
+    TestContext ctx;
     auto lexer = std::make_unique<Lexer>(input);
     Parser parser(std::move(lexer));
-    auto program = parser.ParseProgram();
-    auto env = NewEnvironment();
+    ctx.program = parser.ParseProgram();
+    ctx.env = NewEnvironment();
+    ctx.result = Eval(ctx.program.get(), ctx.env);
+    return ctx;
+}
 
-    return Eval(program.get(), env.get());
+std::unique_ptr<Object> testEval(const std::string& input) {
+    auto ctx = testEvalWithContext(input);
+    return std::move(ctx.result);
 }
 
 bool testIntegerObject(Object* obj, int64_t expected) {
@@ -278,3 +290,52 @@ TEST(EvaluatorTest, TestLetStatement) {
     }
 }
 
+TEST(EvaluatorTest, TestFunctionObject) {
+    std::string input = "fn(x) { x + 2; };";
+    auto ctx = testEvalWithContext(input);
+
+    auto fn = dynamic_cast<Function*>(ctx.result.get());
+    ASSERT_TRUE(fn != nullptr) << "object is not Function.";
+
+    ASSERT_EQ(fn->Parameters.size(), 1);
+    ASSERT_EQ(fn->Parameters[0], "x");
+
+    std::string expectedBody = "(x + 2)";
+    ASSERT_EQ(fn->Body->String(), expectedBody);
+}
+
+TEST(EvaluatorTest, TestFunctionApplication) {
+    struct TestCase {
+        std::string input;
+        int64_t expected;
+    };
+
+    std::vector<TestCase> tests = {
+        {"let identity = fn(x) { x; }; identity(5);", 5},
+        {"let identity = fn(x) { return x; }; identity(5);", 5},
+        {"let double = fn(x) { x * 2; }; double(5);", 10},
+        {"let add = fn(x, y) { x + y; }; add(5, 5);", 10},
+        {"let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));", 20},
+        {"fn(x) { x; }(5)", 5},
+    };
+
+    for (const auto& tt : tests) {
+        auto ctx = testEvalWithContext(tt.input);
+        ASSERT_TRUE(testIntegerObject(ctx.result.get(), tt.expected))
+            << "Failed testing input: " << tt.input;
+    }
+}
+
+TEST(EvaluatorTest, TestClosures) {
+    std::string input = R"(
+        let newAdder = fn(x) {
+        fn(y) { x + y };
+        };
+        let addTwo = newAdder(2);
+        addTwo(2);
+    )";
+
+    auto ctx = testEvalWithContext(input);
+    ASSERT_TRUE(testIntegerObject(ctx.result.get(), 4))
+        << "Failed testing closures";
+}
