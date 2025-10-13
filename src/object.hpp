@@ -14,6 +14,7 @@ using ObjectType = std::string;
 
 inline const ObjectType INTEGER_OBJ = "INTEGER";
 inline const ObjectType BOOLEAN_OBJ = "BOOLEAN";
+inline const ObjectType STRING_OBJ = "STRING";
 inline const ObjectType NULL_OBJ    = "NULL";
 inline const ObjectType RETURN_VALUE_OBJ  = "RETURN_VALUE";
 inline const ObjectType ERROR_OBJ = "ERROR";
@@ -31,6 +32,15 @@ public:
     int64_t Value;
 
     Integer(int64_t value);
+    ObjectType Type() const override;
+    std::string Inspect() const override;
+};
+
+class String : public Object {
+public:
+    std::string Value;
+
+    String(const std::string& Value);
     ObjectType Type() const override;
     std::string Inspect() const override;
 };

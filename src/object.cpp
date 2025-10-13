@@ -79,3 +79,14 @@ std::string Function::Inspect() const {
     return out;
 }
 
+// String implementation
+String::String(const std::string& value) : Value(value) {}
+
+ObjectType String::Type() const {
+    return STRING_OBJ;
+}
+
+ObjectType String::Inspect() const {
+    return Value;
+}
+
