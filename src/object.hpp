@@ -5,6 +5,7 @@
 #include<cstdint>
 #include<string>
 #include<memory>
+#include<functional>
 
 class Identifier;
 class BlockStatement;
@@ -19,6 +20,7 @@ inline const ObjectType NULL_OBJ    = "NULL";
 inline const ObjectType RETURN_VALUE_OBJ  = "RETURN_VALUE";
 inline const ObjectType ERROR_OBJ = "ERROR";
 inline const ObjectType FUNCTION_OBJ = "FUNCTION";
+inline const ObjectType BUILTIN_OBJ = "BUILTIN";
 
 class Object {
 public:
@@ -88,6 +90,18 @@ public:
     Function(std::vector<std::string> params, BlockStatement* body, std::shared_ptr<Environment> env);
     ObjectType Type() const override;
     std::string Inspect() const override;
+};
+
+// Built-in function type
+using BuiltinFunction = std::function<std::unique_ptr<Object>(std::vector<std::unique_ptr<Object>>)>;
+
+class Builtin : public Object {
+public:
+    BuiltinFunction Fn;
+
+    Builtin(BuiltinFunction fn);
+    ObjectType Type() const override;
+    ObjectType Inspect() const override;
 };
 
 #endif // OBJECT_HPP

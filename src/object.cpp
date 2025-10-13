@@ -90,3 +90,14 @@ ObjectType String::Inspect() const {
     return Value;
 }
 
+// Builtin implementation
+Builtin::Builtin(BuiltinFunction fn) : Fn(fn) {}
+
+ObjectType Builtin::Type() const {
+    return BUILTIN_OBJ;
+}
+
+ObjectType Builtin::Inspect() const {
+    return "builtin function";
+}
+
