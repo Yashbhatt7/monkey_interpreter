@@ -254,6 +254,10 @@ TEST(EvaluatorTest, TestErrorHandling) {
             "foobar",
             "identifier not found: foobar",
         },
+        {
+            R"("Hello" - "World")",
+            "unknown operator: STRING - STRING",
+        },
     };
 
     for (const auto& tt : tests) {
@@ -332,10 +336,37 @@ TEST(EvaluatorTest, TestClosures) {
         fn(y) { x + y };
         };
         let addTwo = newAdder(2);
-        addTwo(2);
+        addTwo(3);
     )";
 
     auto ctx = testEvalWithContext(input);
-    ASSERT_TRUE(testIntegerObject(ctx.result.get(), 4))
+    ASSERT_TRUE(testIntegerObject(ctx.result.get(), 5))
         << "Failed testing closures";
 }
+
+TEST(EvaluatorTest, TestStringLiteral) {
+    std::string input = R"("Hello World!")";
+
+    auto evaluated = testEval(input);
+
+    auto str = dynamic_cast<String*>(evaluated.get());
+    ASSERT_NE(str, nullptr)
+        << "object is not String. got=" << typeid(*evaluated.get()).name();
+
+    EXPECT_EQ(str->Value, "Hello World!")
+        << "String has wrong value. got=" << str->Value;
+}
+
+TEST(EvaluatorTest, TestStringConcatenation) {
+    std::string input = R"("Hello" + " " + "World!")";
+
+    auto evaluated = testEval(input);
+
+    auto str = dynamic_cast<String*>(evaluated.get());
+    ASSERT_NE(str, nullptr)
+        << "object is not String. got=" << typeid(*evaluated.get()).name();
+
+    EXPECT_EQ(str->Value, "Hello World!")
+        << "String has wrong value. got=" << str->Value;
+}
+
