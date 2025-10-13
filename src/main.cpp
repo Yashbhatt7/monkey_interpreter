@@ -3,6 +3,7 @@
 #include<unistd.h>
 #include<pwd.h>
 #include "repl.hpp"
+#include "builtins.hpp"
 
 std::string getCurrentUsername() {
     struct passwd *pw = getpwuid(getuid());
@@ -19,6 +20,8 @@ int main() {
 
         std::cout << "Hello " << username << "! This is the Monkey programming language!" << "\n";
         std::cout << "Feel free to type in commands" << "\n";
+
+        initBuiltins();
 
         Start(std::cin, std::cout);
     }
