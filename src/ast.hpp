@@ -14,6 +14,7 @@ enum class NodeType {
     BLOCK_STATEMENT,
     IDENTIFIER,
     INTEGER_LITERAL,
+    STRING_LITERAL,
     BOOLEAN_LITERAL,
     PREFIX_EXPRESSION,
     INFIX_EXPRESSION,
@@ -198,6 +199,17 @@ public:
     std::string TokenLiteral() const override;
     std::string String() const override;
     NodeType Type() const override { return NodeType::CALL_EXPRESSION; };
+};
+
+class StringLiteral : public Expression {
+public:
+    Token token;
+    std::string Value;
+
+    void expressionNode() override {}
+    std::string TokenLiteral() const override;
+    std::string String() const override;
+    NodeType Type() const override { return NodeType::STRING_LITERAL; };
 };
 
 #endif // AST_HPP
