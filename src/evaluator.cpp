@@ -3,6 +3,7 @@
 #include "ast.hpp"
 #include "object.hpp"
 #include "environment.hpp"
+#include "builtins.hpp"
 
 template<typename... Args>
 std::unique_ptr<Error> newError(fmt::format_string<Args...> format, Args&&... args) {
@@ -219,23 +220,27 @@ std::unique_ptr<Object> evalIfExpression(IfExpression* ie, std::shared_ptr<Envir
 std::unique_ptr<Object> evalIdentifier(Identifier* ident, std::shared_ptr<Environment> env) {
     Object* val = env->Get(ident->Value);
 
-    if (!val) {
-        return newError("identifier not found: {}", ident->Value);
+    if (val) {
+        if (auto intObj = dynamic_cast<Integer*>(val)) {
+            return std::make_unique<Integer>(*intObj);
+        } else if (auto boolObj = dynamic_cast<Boolean*>(val)) {
+            return std::make_unique<Boolean>(*boolObj);
+        } else if (auto nullObj = dynamic_cast<Null*>(val)) {
+            return std::make_unique<Null>(*nullObj);
+        } else if (auto funcObj = dynamic_cast<Function*>(val)) {
+            return std::make_unique<Function>(funcObj->Parameters, funcObj->Body, funcObj->Env);
+        } else if (auto strObj = dynamic_cast<String*>(val)) {
+            return std::make_unique<String>(*strObj);
+        } else if (auto builtinObj = dynamic_cast<Builtin*>(val)) {
+            return std::make_unique<Builtin>(*builtinObj);
+        }
     }
 
-    if (auto intObj = dynamic_cast<Integer*>(val)) {
-        return std::make_unique<Integer>(*intObj);
-    } else if (auto boolObj = dynamic_cast<Boolean*>(val)) {
-        return std::make_unique<Boolean>(*boolObj);
-    } else if (auto nullObj = dynamic_cast<Null*>(val)) {
-        return std::make_unique<Null>(*nullObj);
-    } else if (auto funcObj = dynamic_cast<Function*>(val)) {
-        return std::make_unique<Function>(funcObj->Parameters, funcObj->Body, funcObj->Env);
-    } else if (auto strObj = dynamic_cast<String*>(val)) {
-        return std::make_unique<String>(*strObj);
+    if (Builtin* builtin = getBuiltin(ident->Value)) {
+        return std::make_unique<Builtin>(builtin->Fn);
     }
 
-    return newError("unsupported object type in identifier");
+    return newError("identifier not found: {}", ident->Value);
 }
 
 std::vector<std::unique_ptr<Object>> evalExpressions(const std::vector<std::unique_ptr<Expression>>& exps, std::shared_ptr<Environment> env) {
@@ -273,18 +278,21 @@ std::unique_ptr<Object> unwrapReturnValue(std::unique_ptr<Object> obj) {
 }
 
 std::unique_ptr<Object> applyFunction(std::unique_ptr<Object> fn, std::vector<std::unique_ptr<Object>> args) {
-    auto function = dynamic_cast<Function*>(fn.get());
-    if (!function) {
-        return newError("not a function: {}", fn->Type());
+    if (auto function = dynamic_cast<Function*>(fn.get())) {
+        if (function->Parameters.size() != args.size()) {
+            return newError("wrong number of arguments: expected {}, got{}", function->Parameters.size(), args.size());
+        }
+
+        auto extendedEnv = extendFunctionEnv(function, std::move(args));
+        auto evaluated = Eval(function->Body, extendedEnv);
+        return unwrapReturnValue(std::move(evaluated));
     }
 
-    if (function->Parameters.size() != args.size()) {
-        return newError("wrong number of arguments: expected {}, got{}", function->Parameters.size(), args.size());
+    if (auto builtin = dynamic_cast<Builtin*>(fn.get())) {
+        return builtin->Fn(std::move(args));
     }
 
-    auto extendedEnv = extendFunctionEnv(function, std::move(args));
-    auto evaluated = Eval(function->Body, extendedEnv);
-    return unwrapReturnValue(std::move(evaluated));
+    return newError("not a function: {}", fn->Type());
 }
 
 std::unique_ptr<Object> Eval(Node* node, std::shared_ptr<Environment> env) {
