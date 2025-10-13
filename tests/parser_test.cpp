@@ -784,3 +784,27 @@ TEST(ParserTest, TestCallExpressionParameterParsing) {
     }
 }
 
+TEST(ParserTest, TestStringLiteralExpression) {
+    std::string input = R"("hello world";)";
+
+    auto l = std::make_unique<Lexer>(input);
+    Parser p(std::move(l));
+    auto program = p.ParseProgram();
+
+    checkParserErrors(&p);
+
+    ASSERT_EQ(program->Statements.size(), 1)
+        << "program has not enough statements. got=" << program->Statements.size();
+
+    auto stmt = dynamic_cast<ExpressionStatement*>(program->Statements[0].get());
+    ASSERT_NE(stmt, nullptr)
+        << "program.Statements[0] is not ExpressionStatement.";
+
+    auto literal = dynamic_cast<StringLiteral*>(stmt->ExpressionPtr.get());
+    ASSERT_NE(literal, nullptr)
+        << "exp not StringLiteral. got=" << typeid(*stmt->ExpressionPtr.get()).name();
+
+    EXPECT_EQ(literal->Value, "hello world")
+        << "literal.Value not 'hello world'. got=" << literal->Value;
+}
+
