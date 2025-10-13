@@ -6,6 +6,7 @@
 #include "../src/parser.hpp"
 #include "../src/object.hpp"
 #include "../src/evaluator.hpp"
+#include "../src/builtins.hpp"
 
 struct TestContext {
     std::unique_ptr<Program> program;
@@ -368,5 +369,41 @@ TEST(EvaluatorTest, TestStringConcatenation) {
 
     EXPECT_EQ(str->Value, "Hello World!")
         << "String has wrong value. got=" << str->Value;
+}
+
+TEST(EvaluatorTest, TestBuiltinFunctions) {
+    struct TestCase {
+        std::string input;
+        std::variant<int64_t, std::string> expected;
+    };
+
+    std::vector<TestCase> tests = {
+        {R"(len(""))", int64_t(0)},
+        {R"(len("four"))", int64_t(4)},
+        {R"(len("hello world"))", int64_t(11)},
+        {R"(len(1))", std::string("argument to 'len' not supported, got INTEGER")},
+        {R"(len("one", "two"))", std::string("wrong number of arguments. got=2, want=1")},
+    };
+
+    initBuiltins();
+
+    for (const auto& tt : tests) {
+        auto evaluated = testEval(tt.input);
+
+        if (std::holds_alternative<int64_t>(tt.expected)) {
+            int64_t expectedInt = std::get<int64_t>(tt.expected);
+            ASSERT_TRUE(testIntegerObject(evaluated.get(), expectedInt))
+                << "Failed for input: " << tt.input;
+        } else {
+            std::string expectedStr = std::get<std::string>(tt.expected);
+            auto errObj = dynamic_cast<Error*>(evaluated.get());
+            ASSERT_NE(errObj, nullptr)
+                << "object is not Error. got=" << typeid(*evaluated.get()).name()
+                << " for input: " << tt.input;
+
+            EXPECT_EQ(errObj->Message, expectedStr)
+                << "wrong error message for input: " << tt.input;
+        }
+    }
 }
 
