@@ -19,6 +19,7 @@ Parser::Parser(std::unique_ptr<Lexer> lexer)
     // compiler knows that "this" in capture means "return this->parseIdentifier();"
     registerPrefix(TokenType::Ident, [this]() { return parseIdentifier(); });
     registerPrefix(TokenType::Int, [this]() { return parseIntegerLiteral(); });
+    registerPrefix(TokenType::String, [this]() { return parseStringLiteral(); });
 
     registerPrefix(TokenType::If, [this]() { return parseIfExpression(); });
     registerPrefix(TokenType::Function, [this]() { return parseFunctionLiteral(); });
@@ -182,6 +183,13 @@ std::unique_ptr<Expression> Parser::parseIntegerLiteral() {
 
     lit->Value = value;
 
+    return lit;
+}
+
+std::unique_ptr<Expression> Parser::parseStringLiteral() {
+    auto lit = std::make_unique<StringLiteral>();
+    lit->token = curToken;
+    lit->Value = curToken.literal;
     return lit;
 }
 

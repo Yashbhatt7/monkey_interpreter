@@ -52,6 +52,7 @@ public:
     std::vector<std::unique_ptr<Identifier>> parseFunctionParameters();
     std::unique_ptr<Expression> parseCallExpression(std::unique_ptr<Expression> left);
     std::vector<std::unique_ptr<Expression>> parseCallArguments();
+    std::unique_ptr<Expression> parseStringLiteral();
 
     void nextToken();
     std::vector<std::string> Errors();
