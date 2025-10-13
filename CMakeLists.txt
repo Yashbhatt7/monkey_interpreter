@@ -30,3 +30,17 @@ target_link_libraries(evaluator_test
     GTest::gtest
 )
 
+# add_executable(lexer_test tests/lexer_test.cpp)
+# target_link_libraries(lexer_test
+#     monkey_interpreter
+#     GTest::gtest_main
+#     GTest::gtest
+# )
+
+# add_executable(parser_test tests/parser_test.cpp)
+# target_link_libraries(parser_test
+#     monkey_interpreter
+#     GTest::gtest_main
+#     GTest::gtest
+# )
+
