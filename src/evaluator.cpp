@@ -13,6 +13,7 @@ bool isError(Object* obj) {
     if (obj != nullptr) {
         return obj->Type() == ERROR_OBJ;
     }
+    // std::cout << "what it will return false?\n";
     return false;
 }
 
@@ -140,9 +141,27 @@ std::unique_ptr<Object> evalIntegerInfixExpression(const std::string& op, Object
     return newError("unknown operator: {} {} {}", left->Type().c_str(), op.c_str(), right->Type().c_str());
 }
 
+std::unique_ptr<Object> evalStringInfixExpression(const std::string& op, Object* left, Object* right) {
+    if (op != "+") {
+        return newError("unknown operator: {} {} {}", left->Type().c_str(), op.c_str(), right->Type().c_str());
+    }
+
+    auto leftStr = static_cast<String*>(left);
+    auto rightStr = static_cast<String*>(right);
+
+    std::string leftVal = leftStr->Value;
+    std::string rightVal = rightStr->Value;
+
+    return std::make_unique<String>(leftVal + rightVal);
+}
+
 std::unique_ptr<Object> evalInfixExpression(const std::string& op, Object* left, Object* right) {
     if (dynamic_cast<Integer*>(left) && dynamic_cast<Integer*>(right)) {
         return evalIntegerInfixExpression(op, left, right);
+    }
+
+    if (dynamic_cast<String*>(left) && dynamic_cast<String*>(right)) {
+        return evalStringInfixExpression(op, left, right);
     }
 
     if (left->Type() != right->Type()) {
@@ -197,11 +216,11 @@ std::unique_ptr<Object> evalIfExpression(IfExpression* ie, std::shared_ptr<Envir
     }
 }
 
-std::unique_ptr<Object> evalIdentifier(Identifier* node, std::shared_ptr<Environment> env) {
-    Object* val = env->Get(node->Value);
+std::unique_ptr<Object> evalIdentifier(Identifier* ident, std::shared_ptr<Environment> env) {
+    Object* val = env->Get(ident->Value);
 
     if (!val) {
-        return newError("identifier not found: {}", node->Value);
+        return newError("identifier not found: {}", ident->Value);
     }
 
     if (auto intObj = dynamic_cast<Integer*>(val)) {
@@ -212,6 +231,8 @@ std::unique_ptr<Object> evalIdentifier(Identifier* node, std::shared_ptr<Environ
         return std::make_unique<Null>(*nullObj);
     } else if (auto funcObj = dynamic_cast<Function*>(val)) {
         return std::make_unique<Function>(funcObj->Parameters, funcObj->Body, funcObj->Env);
+    } else if (auto strObj = dynamic_cast<String*>(val)) {
+        return std::make_unique<String>(*strObj);
     }
 
     return newError("unsupported object type in identifier");
@@ -288,6 +309,10 @@ std::unique_ptr<Object> Eval(Node* node, std::shared_ptr<Environment> env) {
             // std::cout << "will it be IntegerLiteral?\n";
             return std::make_unique<Integer>(intLiteral->Value);
         }
+        case NodeType::STRING_LITERAL: {
+            auto stringLiteral = static_cast<StringLiteral*>(node);
+            return std::make_unique<String>(stringLiteral->Value);
+        }
         case NodeType::BOOLEAN_LITERAL: {
             auto boolLiteral = static_cast<BooleanLiteral*>(node);
             // std::cout << "will it be BooleanLiteral?\n";
@@ -330,31 +355,36 @@ std::unique_ptr<Object> Eval(Node* node, std::shared_ptr<Environment> env) {
         }
         case NodeType::RETURN_STATEMENT: {
             auto returnStmt = static_cast<ReturnStatement*>(node);
+            // std::cout << "will it be ReturnStatement?\n";
             auto val = Eval(returnStmt->ReturnValue.get(), env);
 
             if (isError(val.get())) {
                 return val;
             }
-            // std::cout << "will it be ReturnStatement?\n";
             return std::make_unique<ReturnValue>(std::move(val));
         }
         case NodeType::LET_STATEMENT: {
             auto letStmt = static_cast<LetStatement*>(node);
+            // std::cout << "will it be LetStatement?\n";
             auto val = Eval(letStmt->Value.get(), env);
 
             if (isError(val.get())) {
+                // std::cout << "isError?\n";
                 return val;
             }
+            // std::cout << "calling set?\n";
 
             env->Set(letStmt->Name->Value, std::move(val));
             return nativeNullObject();
         }
         case NodeType::IDENTIFIER: {
             auto ident = static_cast<Identifier*>(node);
+            // std::cout << "will it be Identifier?\n";
             return evalIdentifier(ident, env);
         }
         case NodeType::FUNCTION_LITERAL: {
             auto funcLit = static_cast<FunctionLiteral*>(node);
+            // std::cout << "will it be FunctionLiteral?\n";
 
             std::vector<std::string> params;
             for (const auto& p : funcLit->Parameters) {
@@ -367,6 +397,7 @@ std::unique_ptr<Object> Eval(Node* node, std::shared_ptr<Environment> env) {
         }
         case NodeType::CALL_EXPRESSION: {
             auto callExpr = static_cast<CallExpression*>(node);
+            // std::cout << "will it be CallExpression?\n";
 
             auto function = Eval(callExpr->Function.get(), env);
 
