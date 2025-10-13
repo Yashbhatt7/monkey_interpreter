@@ -58,6 +58,10 @@ std::string CallExpression::TokenLiteral() const {
     return token.literal;
 }
 
+std::string StringLiteral::TokenLiteral() const {
+    return token.literal;
+}
+
 std::string Program::String() const {
     std::ostringstream out;
     for (const auto& s : Statements) {
@@ -211,5 +215,9 @@ std::string CallExpression::String() const {
     out << ")";
 
     return out.str();
+}
+
+std::string StringLiteral::String() const {
+    return token.literal;
 }
 
