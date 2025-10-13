@@ -17,90 +17,57 @@ Token Lexer::NextToken() {
                 readChar();
                 std::string literal = std::string(1, ch) + std::string(1, this->ch);
                 tok = Token{TokenType::Eq, literal};
-                std::string s = TokenTypeMap::tokenTypeToString(TokenType::Eq);
             } else {
                 tok = newToken(TokenType::Assign, ch);
-                std::string s = TokenTypeMap::tokenTypeToString(TokenType::Assign);
             }
-        }
             break;
+        }
         case '!': {
             if (peekChar() == '=') {
                 char ch = this->ch;
                 readChar();
                 std::string literal = std::string(1, ch) + std::string(1, this->ch);
                 tok = Token{TokenType::NotEq, literal};
-                std::string s = TokenTypeMap::tokenTypeToString(TokenType::NotEq);
             } else {
                 tok = newToken(TokenType::Bang, ch);
-                std::string s = TokenTypeMap::tokenTypeToString(TokenType::Bang);
             }
-        }
             break;
-        case '+': {
+        }
+        case '+':
             tok = newToken(TokenType::Plus, ch); break;
-            std::string s = TokenTypeMap::tokenTypeToString(TokenType::Plus);
-        }
-        case '-': {
+        case '-':
             tok = newToken(TokenType::Minus, ch); break;
-            std::string s = TokenTypeMap::tokenTypeToString(TokenType::Minus);
-        }
-        case '/': {
+        case '/':
             tok = newToken(TokenType::Slash, ch); break;
-            std::string s = TokenTypeMap::tokenTypeToString(TokenType::Slash);
-        }
-        case '*': {
+        case '*':
             tok = newToken(TokenType::Asterisk, ch); break;
-            std::string s = TokenTypeMap::tokenTypeToString(TokenType::Asterisk);
-        }
-        case '<': {
+        case '<':
             tok = newToken(TokenType::Lt, ch); break;
-            std::string s = TokenTypeMap::tokenTypeToString(TokenType::Lt);
-        }
-        case '>': {
+        case '>':
             tok = newToken(TokenType::Gt, ch); break;
-            std::string s = TokenTypeMap::tokenTypeToString(TokenType::Gt);
-        }
-        case ';': {
+        case ';':
             tok = newToken(TokenType::Semicolon, ch); break;
-            std::string s = TokenTypeMap::tokenTypeToString(tok.type);
-        }
-        case '(': {
+        case '(':
             tok = newToken(TokenType::LParen, ch); break;
-            std::string s = TokenTypeMap::tokenTypeToString(TokenType::LParen);
-        }
-        case ')': {
+        case ')':
             tok = newToken(TokenType::RParen, ch); break;
-            std::string s = TokenTypeMap::tokenTypeToString(TokenType::RParen);
-        }
-        case '{': {
+        case '{':
             tok = newToken(TokenType::LSquirly, ch); break;
-            std::string s = TokenTypeMap::tokenTypeToString(TokenType::LSquirly);
-        }
-        case '}': {
+        case '}':
             tok = newToken(TokenType::RSquirly, ch); break;
-            std::string s = TokenTypeMap::tokenTypeToString(TokenType::RSquirly);
-        }
-        case '[': {
+        case '[':
             tok = newToken(TokenType::LBracket, ch); break;
-            std::string s = TokenTypeMap::tokenTypeToString(tok.type);
-        }
-        case ']': {
+        case ']':
             tok = newToken(TokenType::RBracket, ch); break;
-            std::string s = TokenTypeMap::tokenTypeToString(tok.type);
-        }
         case '"': {
-            tok = newToken(TokenType::String, ch); break;
-            std::string s = TokenTypeMap::tokenTypeToString(TokenType::String);
+            tok.type = TokenType::String;
+            tok.literal = readString();
+            break;
         }
-        case ',': {
+        case ',':
             tok = newToken(TokenType::Comma, ch); break;
-            std::string s = TokenTypeMap::tokenTypeToString(TokenType::Comma);
-        }
-        case 0: {
+        case 0:
             tok = Token{TokenType::Eof, ""}; break;
-            std::string s = TokenTypeMap::tokenTypeToString(TokenType::Eof);
-        }
         default: {
             if (isLetter(ch)) {
                 tok.literal = readIdentifier();
@@ -148,6 +115,18 @@ std::string Lexer::readNumber() {
     size_t start = position;
     while (isDigit(ch)) {
         readChar();
+    }
+
+    return input.substr(start, position - start);
+}
+
+std::string Lexer::readString() {
+    size_t start = position + 1;
+    while (true) {
+        readChar();
+        if (ch == '"' || ch == 0) {
+            break;
+        }
     }
 
     return input.substr(start, position - start);

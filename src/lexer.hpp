@@ -19,6 +19,7 @@ private:
     char peekChar();
     std::string readIdentifier();
     std::string readNumber();
+    std::string readString();
     void skipWhitespace();
     bool isLetter(char ch) const;
     bool isDigit(char ch) const;
