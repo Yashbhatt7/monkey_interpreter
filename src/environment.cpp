@@ -1,5 +1,5 @@
+#include<memory>
 #include "environment.hpp"
-#include <memory>
 
 Object* Environment::Get(const std::string& name) {
     auto it = store.find(name);
