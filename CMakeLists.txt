@@ -14,6 +14,7 @@ add_library(monkey_interpreter
     src/ast.cpp
     src/repl.cpp
     src/environment.cpp
+    src/builtins.cpp
 )
 
 target_link_libraries(monkey_interpreter fmt::fmt)
