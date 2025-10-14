@@ -21,6 +21,8 @@ enum class NodeType {
     IF_EXPRESSION,
     FUNCTION_LITERAL,
     CALL_EXPRESSION,
+    ARRAY_LITERAL,
+    INDEX_EXPRESSION,
 };
 
 // Base Node interface
@@ -210,6 +212,29 @@ public:
     std::string TokenLiteral() const override;
     std::string String() const override;
     NodeType Type() const override { return NodeType::STRING_LITERAL; };
+};
+
+class ArrayLiteral : public Expression {
+public:
+    Token token;
+    std::vector<std::unique_ptr<Expression>> Elements;
+
+    void expressionNode() override {}
+    std::string TokenLiteral() const override;
+    std::string String() const override;
+    NodeType Type() const override { return NodeType::ARRAY_LITERAL; }
+};
+
+class IndexExpression : public Expression {
+public:
+    Token token;
+    std::unique_ptr<Expression> Left;
+    std::unique_ptr<Expression> Index;
+
+    void expressionNode() override {}
+    std::string TokenLiteral() const override;
+    std::string String() const override;
+    NodeType Type() const override { return NodeType::INDEX_EXPRESSION; }
 };
 
 #endif // AST_HPP

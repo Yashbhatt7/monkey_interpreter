@@ -62,6 +62,14 @@ std::string StringLiteral::TokenLiteral() const {
     return token.literal;
 }
 
+std::string ArrayLiteral::TokenLiteral() const {
+    return token.literal;
+}
+
+std::string IndexExpression::TokenLiteral() const {
+    return token.literal;
+}
+
 std::string Program::String() const {
     std::ostringstream out;
     for (const auto& s : Statements) {
@@ -219,5 +227,37 @@ std::string CallExpression::String() const {
 
 std::string StringLiteral::String() const {
     return token.literal;
+}
+
+std::string ArrayLiteral::String() const {
+    std::ostringstream out;
+    std::vector<std::string> elements;
+
+    for (const auto& el : Elements) {
+        elements.push_back(el->String());
+    }
+
+    out << "[";
+    for (size_t i = 0; i < elements.size(); ++i) {
+        if (i > 0) {
+            out << ", ";
+        }
+        out << elements[i];
+    }
+    out << "]";
+
+    return out.str();
+}
+
+std::string IndexExpression::String() const {
+    std::ostringstream out;
+
+    out << "(";
+    out << Left->String();
+    out << "[";
+    out << Index->String();
+    out << "])";
+
+    return out.str();
 }
 
