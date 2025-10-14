@@ -11,6 +11,7 @@ const std::unordered_map<TokenType, Precedence> Parser::precedences = {
     { TokenType::Slash,     Precedence::PRODUCT },
     { TokenType::Asterisk,  Precedence::PRODUCT },
     { TokenType::LParen,    Precedence::CALL },
+    { TokenType::LBracket,  Precedence::INDEX },
 };
 
 Parser::Parser(std::unique_ptr<Lexer> lexer)
@@ -27,6 +28,7 @@ Parser::Parser(std::unique_ptr<Lexer> lexer)
     registerPrefix(TokenType::Bang, [this]() { return parsePrefixExpression(); });
     registerPrefix(TokenType::Minus, [this]() { return parsePrefixExpression(); });
     registerPrefix(TokenType::LParen, [this]() { return parseGroupedExpression(); });
+    registerPrefix(TokenType::LBracket, [this]() { return parseArrayLiteral(); });
 
     registerPrefix(TokenType::True, [this]() { return parseBoolean(); });
     registerPrefix(TokenType::False, [this]() { return parseBoolean(); });
@@ -40,6 +42,7 @@ Parser::Parser(std::unique_ptr<Lexer> lexer)
     registerInfix(TokenType::Lt, [this](std::unique_ptr<Expression> left) { return parseInfixExpression(std::move(left)); });
     registerInfix(TokenType::Gt, [this](std::unique_ptr<Expression> left) { return parseInfixExpression(std::move(left)); });
     registerInfix(TokenType::LParen, [this](std::unique_ptr<Expression> left) { return parseCallExpression(std::move(left)); });
+    registerInfix(TokenType::LBracket, [this](std::unique_ptr<Expression> left) { return parseIndexExpression(std::move(left)); });
 
     nextToken();
     nextToken();
@@ -193,6 +196,15 @@ std::unique_ptr<Expression> Parser::parseStringLiteral() {
     return lit;
 }
 
+std::unique_ptr<Expression> Parser::parseArrayLiteral() {
+    auto array = std::make_unique<ArrayLiteral>();
+    array->token = curToken;
+
+    array->Elements = parseExpressionList(TokenType::RBracket);
+
+    return array;
+}
+
 std::unique_ptr<Expression> Parser::parsePrefixExpression() {
     // Trace trace("parsePrefixExpression");
     auto expression = std::make_unique<PrefixExpression>();
@@ -236,33 +248,73 @@ std::unique_ptr<Expression> Parser::parseCallExpression(std::unique_ptr<Expressi
     auto exp = std::make_unique<CallExpression>();
     exp->token = curToken;
     exp->Function = std::move(left);
-    exp->Arguments = parseCallArguments();
+    // exp->Arguments = parseCallArguments();
+    exp->Arguments = parseExpressionList(TokenType::RParen);
 
     return exp;
 }
 
-std::vector<std::unique_ptr<Expression>> Parser::parseCallArguments() {
-    std::vector<std::unique_ptr<Expression>> args;
+// std::vector<std::unique_ptr<Expression>> Parser::parseCallArguments() {
+//     std::vector<std::unique_ptr<Expression>> args;
+//
+//     if (peekTokenIs(TokenType::RParen)) {
+//         nextToken();
+//         return args;
+//     }
+//
+//     nextToken();
+//     args.push_back(parseExpression(static_cast<int>(Precedence::LOWEST)));
+//
+//     while (peekTokenIs(TokenType::Comma)) {
+//         nextToken();
+//         nextToken();
+//         args.push_back(parseExpression(static_cast<int>(Precedence::LOWEST)));
+//     }
+//
+//     if (!expectPeek(TokenType::RParen)) {
+//         return {};
+//     }
+//
+//     return args;
+// }
 
-    if (peekTokenIs(TokenType::RParen)) {
+std::vector<std::unique_ptr<Expression>> Parser::parseExpressionList(TokenType end) {
+    std::vector<std::unique_ptr<Expression>> list;
+
+    if (peekTokenIs(end)) {
         nextToken();
-        return args;
+        return list;
     }
 
     nextToken();
-    args.push_back(parseExpression(static_cast<int>(Precedence::LOWEST)));
+    list.push_back(parseExpression(static_cast<int>(Precedence::LOWEST)));
 
     while (peekTokenIs(TokenType::Comma)) {
         nextToken();
         nextToken();
-        args.push_back(parseExpression(static_cast<int>(Precedence::LOWEST)));
+        list.push_back(parseExpression(static_cast<int>(Precedence::LOWEST)));
     }
 
-    if (!expectPeek(TokenType::RParen)) {
+    if (!expectPeek(end)) {
         return {};
     }
 
-    return args;
+    return list;
+}
+
+std::unique_ptr<Expression> Parser::parseIndexExpression(std::unique_ptr<Expression> left) {
+    auto expr = std::make_unique<IndexExpression>();
+    expr->token = curToken;
+    expr->Left = std::move(left);
+
+    nextToken();
+    expr->Index = parseExpression(static_cast<int>(Precedence::LOWEST));
+
+    if (!expectPeek(TokenType::RBracket)) {
+        return nullptr;
+    }
+
+    return expr;
 }
 
 // <<- ----------------------------------From here parser starts parsing the program------------------------------------------ ->>

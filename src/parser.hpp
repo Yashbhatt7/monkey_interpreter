@@ -16,6 +16,7 @@ enum class Precedence {
     PRODUCT,       // *
     PREFIX,        // -X or !X
     CALL,          // myFunction(X)
+    INDEX,         // for array index [1]
 };
 
 using prefixParseFn = std::function<std::unique_ptr<Expression>()>;
@@ -51,8 +52,11 @@ public:
     std::unique_ptr<Expression> parseFunctionLiteral();
     std::vector<std::unique_ptr<Identifier>> parseFunctionParameters();
     std::unique_ptr<Expression> parseCallExpression(std::unique_ptr<Expression> left);
-    std::vector<std::unique_ptr<Expression>> parseCallArguments();
+    // std::vector<std::unique_ptr<Expression>> parseCallArguments();
     std::unique_ptr<Expression> parseStringLiteral();
+    std::unique_ptr<Expression> parseArrayLiteral();
+    std::unique_ptr<Expression> parseIndexExpression(std::unique_ptr<Expression> left);
+    std::vector<std::unique_ptr<Expression>> parseExpressionList(TokenType end);
 
     void nextToken();
     std::vector<std::string> Errors();
