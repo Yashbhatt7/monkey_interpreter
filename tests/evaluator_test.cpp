@@ -259,6 +259,15 @@ TEST(EvaluatorTest, TestErrorHandling) {
             R"("Hello" - "World")",
             "unknown operator: STRING - STRING",
         },
+        {
+            R"({"name": "Monkey"}[fn(x) { x }];)",
+            "unusable as hash key: FUNCTION",
+        },
+        {
+            R"(999[1])",
+            "index operator not supported: INTEGER",
+        },
+
     };
 
     for (const auto& tt : tests) {
@@ -267,7 +276,7 @@ TEST(EvaluatorTest, TestErrorHandling) {
         auto* errObj = dynamic_cast<Error*>(evaluated.get());
         if (!errObj) {
             FAIL() << "no error object returned. got="
-                   << evaluated->Type() << "(" << evaluated->Inspect() << ")";
+                << evaluated->Type() << "(" << evaluated->Inspect() << ")";
             continue;
         }
 
@@ -484,6 +493,73 @@ TEST(EvaluatorTest, TestArrayIndexExpressions) {
             EXPECT_TRUE(testNullObject(evaluated.get()))
                 << "Expected null but got: " << evaluated->Inspect()
                 << " for input: " << tt.input;
+        }
+    }
+}
+
+TEST(EvaluatorTest, TestHashLiterals) {
+    std::string input = R"(
+        let two = "two";
+        {
+        "one": 10 - 9,
+        two: 1 + 1,
+        "thr" + "ee": 6 / 2,
+        4: 4,
+        true: 5,
+        false: 6
+        }
+    )";
+
+    auto evaluated = testEval(input);
+
+    auto result = dynamic_cast<Hash*>(evaluated.get());
+    ASSERT_NE(result, nullptr)
+        << "Eval didn't return Hash. got=" << typeid(*evaluated.get()).name();
+
+    std::unordered_map<HashKey, int64_t> expected;
+    expected[String("one").HashKey_()] = 1;
+    expected[String("two").HashKey_()] = 2;
+    expected[String("three").HashKey_()] = 3;
+    expected[Integer(4).HashKey_()] = 4;
+    expected[Boolean(true).HashKey_()] = 5;
+    expected[Boolean(false).HashKey_()] = 6;
+
+    ASSERT_EQ(result->Pairs.size(), expected.size())
+        << "Hash has wrong num of pairs. got=" << result->Pairs.size();
+
+    for (const auto& [expectedKey, expectedValue] : expected) {
+        auto it = result->Pairs.find(expectedKey);
+        ASSERT_NE(it, result->Pairs.end())
+            << "no pair for given key in Pairs";
+        EXPECT_TRUE(testIntegerObject(it->second.Value.get(), expectedValue));
+    }
+}
+
+TEST(EvaluatorTest, TestHashIndexExpressions) {
+    struct TestCase {
+        std::string input;
+        std::optional<int64_t> expected;
+    };
+
+    std::vector<TestCase> tests = {
+        {R"({"foo": 5}["foo"])", 5},
+        {R"({"foo": 5}["bar"])", std::nullopt},
+        {R"(let key = "foo"; {"foo": 5}[key])", 5},
+        {R"({}["foo"])", std::nullopt},
+        {"{5: 5}[5]", 5},
+        {"{true: 5}[true]", 5},
+        {"{false: 5}[false]", 5},
+    };
+
+    for (const auto& tt : tests) {
+        auto evaluated = testEval(tt.input);
+
+        if (tt.expected.has_value()) {
+            EXPECT_TRUE(testIntegerObject(evaluated.get(), tt.expected.value()))
+                << "Failed for input: " << tt.input;
+        } else {
+            EXPECT_TRUE(testNullObject(evaluated.get()))
+                << "Expected null for input: " << tt.input;
         }
     }
 }
