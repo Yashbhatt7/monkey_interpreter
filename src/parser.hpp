@@ -57,6 +57,7 @@ public:
     std::unique_ptr<Expression> parseArrayLiteral();
     std::unique_ptr<Expression> parseIndexExpression(std::unique_ptr<Expression> left);
     std::vector<std::unique_ptr<Expression>> parseExpressionList(TokenType end);
+    std::unique_ptr<Expression> parseHashLiteral();
 
     void nextToken();
     std::vector<std::string> Errors();

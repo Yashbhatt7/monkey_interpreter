@@ -29,6 +29,7 @@ Parser::Parser(std::unique_ptr<Lexer> lexer)
     registerPrefix(TokenType::Minus, [this]() { return parsePrefixExpression(); });
     registerPrefix(TokenType::LParen, [this]() { return parseGroupedExpression(); });
     registerPrefix(TokenType::LBracket, [this]() { return parseArrayLiteral(); });
+    registerPrefix(TokenType::LSquirly, [this]() { return parseHashLiteral(); });
 
     registerPrefix(TokenType::True, [this]() { return parseBoolean(); });
     registerPrefix(TokenType::False, [this]() { return parseBoolean(); });
@@ -203,6 +204,37 @@ std::unique_ptr<Expression> Parser::parseArrayLiteral() {
     array->Elements = parseExpressionList(TokenType::RBracket);
 
     return array;
+}
+
+std::unique_ptr<Expression> Parser::parseHashLiteral() {
+    auto hash = std::make_unique<HashLiteral>();
+    hash->token = curToken;
+
+    while (!peekTokenIs(TokenType::RSquirly)) {
+        nextToken();
+        auto key = parseExpression(static_cast<int>(Precedence::LOWEST));
+
+        if (!expectPeek(TokenType::Colon)) {
+            return nullptr;
+        }
+
+        nextToken();
+        auto value = parseExpression(static_cast<int>(Precedence::LOWEST));
+
+        Expression* keyPtr = key.get();
+        hash->Pairs[keyPtr] = std::move(value);
+        key.release();
+
+        if (!peekTokenIs(TokenType::RSquirly) && !expectPeek(TokenType::Comma)) {
+            return nullptr;
+        }
+    }
+
+    if (!expectPeek(TokenType::RSquirly)) {
+        return nullptr;
+    }
+
+    return hash;
 }
 
 std::unique_ptr<Expression> Parser::parsePrefixExpression() {
