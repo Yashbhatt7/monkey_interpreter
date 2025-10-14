@@ -28,6 +28,7 @@ TEST(LexerTest, NextTokenFullTest) {
         10 != 9;
         "foobar"
         "foo bar"
+        [1, 2];
     )";
 
     Lexer l(input);
@@ -124,6 +125,13 @@ TEST(LexerTest, NextTokenFullTest) {
         // "foo bar"
         {TokenType::String, "foobar"},
         {TokenType::String, "foo bar"},
+        // [1, 2];
+        {TokenType::LBracket, "["},
+        {TokenType::Int, "1"},
+        {TokenType::Comma, ","},
+        {TokenType::Int, "2"},
+        {TokenType::RBracket, "]"},
+        {TokenType::Semicolon, ";"},
         {TokenType::Eof, ""},
     };
 
