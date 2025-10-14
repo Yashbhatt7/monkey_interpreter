@@ -226,13 +226,25 @@ std::unique_ptr<Object> evalIdentifier(Identifier* ident, std::shared_ptr<Enviro
         } else if (auto boolObj = dynamic_cast<Boolean*>(val)) {
             return std::make_unique<Boolean>(*boolObj);
         } else if (auto nullObj = dynamic_cast<Null*>(val)) {
-            return std::make_unique<Null>(*nullObj);
+            return std::make_unique<Null>();
         } else if (auto funcObj = dynamic_cast<Function*>(val)) {
             return std::make_unique<Function>(funcObj->Parameters, funcObj->Body, funcObj->Env);
         } else if (auto strObj = dynamic_cast<String*>(val)) {
             return std::make_unique<String>(*strObj);
         } else if (auto builtinObj = dynamic_cast<Builtin*>(val)) {
             return std::make_unique<Builtin>(*builtinObj);
+        } else if (auto arrayObj = dynamic_cast<Array*>(val)) {
+            std::vector<std::unique_ptr<Object>> newElements;
+            for (const auto& elem : arrayObj->Elements) {
+                if (auto intElem = dynamic_cast<Integer*>(elem.get())) {
+                    newElements.push_back(std::make_unique<Integer>(*intElem));
+                } else if (auto boolElem = dynamic_cast<Boolean*>(elem.get())) {
+                    newElements.push_back(std::make_unique<Boolean>(*boolElem));
+                } else if (auto strElem = dynamic_cast<String*>(elem.get())) {
+                    newElements.push_back(std::make_unique<String>(*strElem));
+                }
+            }
+            return std::make_unique<Array>(std::move(newElements));
         }
     }
 
@@ -280,7 +292,7 @@ std::unique_ptr<Object> unwrapReturnValue(std::unique_ptr<Object> obj) {
 std::unique_ptr<Object> applyFunction(std::unique_ptr<Object> fn, std::vector<std::unique_ptr<Object>> args) {
     if (auto function = dynamic_cast<Function*>(fn.get())) {
         if (function->Parameters.size() != args.size()) {
-            return newError("wrong number of arguments: expected {}, got{}", function->Parameters.size(), args.size());
+            return newError("wrong number of arguments: expected {}, got {}", function->Parameters.size(), args.size());
         }
 
         auto extendedEnv = extendFunctionEnv(function, std::move(args));
@@ -293,6 +305,39 @@ std::unique_ptr<Object> applyFunction(std::unique_ptr<Object> fn, std::vector<st
     }
 
     return newError("not a function: {}", fn->Type());
+}
+
+std::unique_ptr<Object> evalArrayIndexExpression(Object* array, Object* index) {
+    auto arrayObject = static_cast<Array*>(array);
+    auto idx = static_cast<Integer*>(index)->Value;
+    int64_t max = static_cast<int64_t>(arrayObject->Elements.size()) - 1;
+
+    if (idx < 0 || idx > max) {
+        return nativeNullObject();
+    }
+
+    Object* elem = arrayObject->Elements[idx].get();
+    if (auto intElem = dynamic_cast<Integer*>(elem)) {
+        return std::make_unique<Integer>(*intElem);
+    } else if (auto boolElem = dynamic_cast<Boolean*>(elem)) {
+        return std::make_unique<Boolean>(*boolElem);
+    } else if (auto strElem = dynamic_cast<String*>(elem)) {
+        return std::make_unique<String>(*strElem);
+    } else if (auto nullElem = dynamic_cast<Null*>(elem)) {
+        return std::make_unique<Null>(*nullElem);
+    } else if (auto funcElem = dynamic_cast<Function*>(elem)) {
+        return std::make_unique<Function>(funcElem->Parameters, funcElem->Body, funcElem->Env);
+    }
+
+    return nativeNullObject();
+}
+
+std::unique_ptr<Object> evalIndexExpression(Object* left, Object* index) {
+    if (left->Type() == "ARRAY" && index->Type() == "INTEGER") {
+        return evalArrayIndexExpression(left, index);
+    }
+
+    return newError("index operator not supported: {}", left->Type().c_str());
 }
 
 std::unique_ptr<Object> Eval(Node* node, std::shared_ptr<Environment> env) {
@@ -419,6 +464,32 @@ std::unique_ptr<Object> Eval(Node* node, std::shared_ptr<Environment> env) {
             }
 
             return applyFunction(std::move(function), std::move(args));
+        }
+        case NodeType::ARRAY_LITERAL: {
+            auto arrayLit = static_cast<ArrayLiteral*>(node);
+            auto elements = evalExpressions(arrayLit->Elements, env);
+
+            if (elements.size() == 1 && isError(elements[0].get())) {
+                return std::move(elements[0]);
+            }
+
+            return std::make_unique<Array>(std::move(elements));
+        }
+        case NodeType::INDEX_EXPRESSION: {
+            auto indexExpr = static_cast<IndexExpression*>(node);
+            auto left = Eval(indexExpr->Left.get(), env);
+
+            if (isError(left.get())) {
+                return left;
+            }
+
+            auto index = Eval(indexExpr->Index.get(), env);
+
+            if (isError(index.get())) {
+                return index;
+            }
+
+            return evalIndexExpression(left.get(), index.get());
         }
     }
 
