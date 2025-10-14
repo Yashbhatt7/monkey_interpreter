@@ -14,21 +14,16 @@ bool isError(Object* obj) {
     if (obj != nullptr) {
         return obj->Type() == ERROR_OBJ;
     }
-    // std::cout << "what it will return false?\n";
     return false;
 }
 
 std::unique_ptr<Object> evalProgram(const std::vector<std::unique_ptr<Statement>>& stmts, std::shared_ptr<Environment> env) {
     std::unique_ptr<Object> result;
-    // std::cout << "will it call evalProgram?\n";
 
     for (const auto& statement : stmts) {
-        // std::cout << "how many times loop ran?\n";
         result = Eval(statement.get(), env);
 
         if (auto returnValue = dynamic_cast<ReturnValue*>(result.get())) {
-            // auto get = dynamic_cast<Integer*>(returnValue->Value.get());
-            // std::cout << "\n\n\nwhat we got here: " << get->Value << "\n\n\n";
             return std::move(returnValue->Value);
         }
 
@@ -37,7 +32,6 @@ std::unique_ptr<Object> evalProgram(const std::vector<std::unique_ptr<Statement>
         }
     }
 
-    // std::cout << "did this come out of loop?\n";
     return result;
 }
 
@@ -538,21 +532,18 @@ std::unique_ptr<Object> Eval(Node* node, std::shared_ptr<Environment> env) {
         // Program
         case NodeType::PROGRAM: {
             auto program = static_cast<Program*>(node);
-            // std::cout << "Program?\n";
             return evalProgram(program->Statements, env);
         }
 
         // Statements
         case NodeType::EXPRESSION_STATEMENT: {
             auto exprStmt = static_cast<ExpressionStatement*>(node);
-            // std::cout << "expression Statement?\n";
             return Eval(exprStmt->ExpressionPtr.get(), env);
         }
 
         // Expressions
         case NodeType::INTEGER_LITERAL: {
             auto intLiteral = static_cast<IntegerLiteral*>(node);
-            // std::cout << "will it be IntegerLiteral?\n";
             return std::make_unique<Integer>(intLiteral->Value);
         }
         case NodeType::STRING_LITERAL: {
@@ -561,7 +552,6 @@ std::unique_ptr<Object> Eval(Node* node, std::shared_ptr<Environment> env) {
         }
         case NodeType::BOOLEAN_LITERAL: {
             auto boolLiteral = static_cast<BooleanLiteral*>(node);
-            // std::cout << "will it be BooleanLiteral?\n";
             return nativeBoolToBooleanObject(boolLiteral->Value);
         }
         case NodeType::PREFIX_EXPRESSION: {
@@ -571,12 +561,10 @@ std::unique_ptr<Object> Eval(Node* node, std::shared_ptr<Environment> env) {
             if (isError(right.get())) {
                 return right;
             }
-            // std::cout << "will it be BooleanLiteral?\n";
             return evalPrefixExpression(prefixExpr->Operator, right.get());
         }
         case NodeType::INFIX_EXPRESSION: {
             auto infixExpr = static_cast<InfixExpression*>(node);
-            // std::cout << "will it be InfixExpression?\n";
             auto left = Eval(infixExpr->Left.get(), env);
             if (isError(left.get())) {
                 return left;
@@ -591,17 +579,14 @@ std::unique_ptr<Object> Eval(Node* node, std::shared_ptr<Environment> env) {
         }
         case NodeType::BLOCK_STATEMENT: {
             auto blockStmt = static_cast<BlockStatement*>(node);
-            // std::cout << "will it be BlockStatement?\n";
             return evalBlockStatement(blockStmt->Statements, env);
         }
         case NodeType::IF_EXPRESSION: {
             auto ifExpr = static_cast<IfExpression*>(node);
-            // std::cout << "will it be IFExpression?\n";
             return evalIfExpression(ifExpr, env);
         }
         case NodeType::RETURN_STATEMENT: {
             auto returnStmt = static_cast<ReturnStatement*>(node);
-            // std::cout << "will it be ReturnStatement?\n";
             auto val = Eval(returnStmt->ReturnValue.get(), env);
 
             if (isError(val.get())) {
@@ -611,26 +596,21 @@ std::unique_ptr<Object> Eval(Node* node, std::shared_ptr<Environment> env) {
         }
         case NodeType::LET_STATEMENT: {
             auto letStmt = static_cast<LetStatement*>(node);
-            // std::cout << "will it be LetStatement?\n";
             auto val = Eval(letStmt->Value.get(), env);
 
             if (isError(val.get())) {
-                // std::cout << "isError?\n";
                 return val;
             }
-            // std::cout << "calling set?\n";
 
             env->Set(letStmt->Name->Value, std::move(val));
             return nativeNullObject();
         }
         case NodeType::IDENTIFIER: {
             auto ident = static_cast<Identifier*>(node);
-            // std::cout << "will it be Identifier?\n";
             return evalIdentifier(ident, env);
         }
         case NodeType::FUNCTION_LITERAL: {
             auto funcLit = static_cast<FunctionLiteral*>(node);
-            // std::cout << "will it be FunctionLiteral?\n";
 
             std::vector<std::string> params;
             for (const auto& p : funcLit->Parameters) {
@@ -643,7 +623,6 @@ std::unique_ptr<Object> Eval(Node* node, std::shared_ptr<Environment> env) {
         }
         case NodeType::CALL_EXPRESSION: {
             auto callExpr = static_cast<CallExpression*>(node);
-            // std::cout << "will it be CallExpression?\n";
 
             auto function = Eval(callExpr->Function.get(), env);
 

@@ -173,7 +173,6 @@ std::unique_ptr<Expression> Parser::parseIntegerLiteral() {
     // Trace trace("parseIntegerLiteral");
     auto lit = std::make_unique<IntegerLiteral>();
     lit->token = curToken;
-    // std::cout << "CURTOKEN IS: " << curToken.literal << "\n";
 
     std::stringstream ss(curToken.literal);
     int64_t value;
@@ -254,13 +253,10 @@ std::unique_ptr<Expression> Parser::parseInfixExpression(std::unique_ptr<Express
     // Trace trace("parseInfixExpression");
     auto expression = std::make_unique<InfixExpression>();
     expression->token = curToken;
-    // std::cout << "curToken for infixExpression method is: " << curToken.literal << "\n";
     expression->Operator = curToken.literal;
     expression->Left = std::move(left);
-    // std::cout << "Left in infixExpression method: " << expression->Left->TokenLiteral() << "\n";
 
     int precedence = curPrecedence();
-    // std::cout << "in between left and right: " << curToken.literal << "\n";
     nextToken();
     expression->Right = parseExpression(precedence);
 
@@ -271,7 +267,6 @@ std::unique_ptr<Expression> Parser::parseInfixExpression(std::unique_ptr<Express
     //     expression->Right = parseExpression(precedence);
     // }
 
-    // std::cout << "Right in infixExpression method: " << expression->Right->TokenLiteral() << "\n";
 
     return expression;
 }
@@ -285,30 +280,6 @@ std::unique_ptr<Expression> Parser::parseCallExpression(std::unique_ptr<Expressi
 
     return exp;
 }
-
-// std::vector<std::unique_ptr<Expression>> Parser::parseCallArguments() {
-//     std::vector<std::unique_ptr<Expression>> args;
-//
-//     if (peekTokenIs(TokenType::RParen)) {
-//         nextToken();
-//         return args;
-//     }
-//
-//     nextToken();
-//     args.push_back(parseExpression(static_cast<int>(Precedence::LOWEST)));
-//
-//     while (peekTokenIs(TokenType::Comma)) {
-//         nextToken();
-//         nextToken();
-//         args.push_back(parseExpression(static_cast<int>(Precedence::LOWEST)));
-//     }
-//
-//     if (!expectPeek(TokenType::RParen)) {
-//         return {};
-//     }
-//
-//     return args;
-// }
 
 std::vector<std::unique_ptr<Expression>> Parser::parseExpressionList(TokenType end) {
     std::vector<std::unique_ptr<Expression>> list;
@@ -358,7 +329,6 @@ std::unique_ptr<Program> Parser::ParseProgram() {
         if (stmt != nullptr) {
             program->Statements.push_back(std::move(stmt));
         }
-        // std::cout << "im right its semicolon..." << curToken.literal << "\n";
         nextToken();
     }
 
@@ -398,19 +368,14 @@ std::unique_ptr<LetStatement> Parser::parseLetStatement() {
     stmt->token = curToken;
 
     if (!expectPeek(TokenType::Ident)) {
-    // std::cout << "curToken is:.." << curToken.literal << std::endl;
-    // std::cout << "peekToken is.." << peekToken.literal << std::endl;
         return nullptr;
     }
-    // std::cout << "curToken is:.." << curToken.literal << std::endl;
-    // std::cout << "peekToken is.." << peekToken.literal << std::endl;
 
     stmt->Name = std::make_unique<Identifier>();
     stmt->Name->token = curToken;
     stmt->Name->Value = curToken.literal;
 
     if (!expectPeek(TokenType::Assign)) {
-        // std::cout << "curToken in assign is:.." << curToken.literal << std::endl;
         return nullptr;
     }
 
@@ -422,7 +387,6 @@ std::unique_ptr<LetStatement> Parser::parseLetStatement() {
         nextToken();
     }
 
-    // std::cout << "curToken is:.." << curToken.literal << std::endl;
     return stmt;
 }
 
@@ -445,7 +409,6 @@ std::unique_ptr<ExpressionStatement> Parser::parseExpressionStatement() {
     // Trace trace("parseExpressionStatement");
     auto stmt = std::make_unique<ExpressionStatement>();
     stmt->token = curToken;
-    // std::cout << "curToken is: " << curToken.literal << "\n";
 
     stmt->ExpressionPtr = parseExpression(static_cast<int>(Precedence::LOWEST));
 
@@ -462,7 +425,6 @@ std::unique_ptr<ExpressionStatement> Parser::parseExpressionStatement() {
 std::unique_ptr<Expression> Parser::parseExpression(int precedence) {
     // Trace trace("parseExpression");
     auto prefixItr = prefixParseFns.find(curToken.type);
-    // std::cout << "curToken for parseExpression method is: " << curToken.literal << "\n";
     if (prefixItr == prefixParseFns.end()) {
         noPrefixParseFnError(curToken.type);
         return nullptr;
@@ -474,7 +436,6 @@ std::unique_ptr<Expression> Parser::parseExpression(int precedence) {
     // Left-Binding-Power ->> peekPrecedence() > Right-Binding-Power ->> precedence
     while (!peekTokenIs(TokenType::Semicolon) && precedence < peekPrecedence()) {
         auto infixItr = infixParseFns.find(peekToken.type);
-        // std::cout << "peekToken type for precedence check: " << peekToken.literal << "\n";
         if (infixItr == infixParseFns.end()) {
             return leftExp;
         }
@@ -483,7 +444,6 @@ std::unique_ptr<Expression> Parser::parseExpression(int precedence) {
 
         nextToken();
         leftExp = infix(std::move(leftExp));
-        // std::cout << "leftExp: " << leftExp->TokenLiteral() << "\n";
     }
 
     return leftExp;
@@ -491,7 +451,6 @@ std::unique_ptr<Expression> Parser::parseExpression(int precedence) {
 
 int Parser::peekPrecedence() {
     auto it = precedences.find(peekToken.type);
-    // std::cout << "precedence: " << static_cast<int>(it->second) << "\n";
     if (it != precedences.end()) {
         return static_cast<int>(it->second);
     }
@@ -557,12 +516,10 @@ void Parser::registerInfix(TokenType tokenType, infixParseFn fn) {
 // }
 //
 // void trace(const std::string& name) {
-//     std::cout << get_indent() << "BEGIN " << name << "\n";
 //     ++trace_level;
 // }
 //
 // void untrace(const std::string& name) {
 //     --trace_level;
-//     std::cout << get_indent() << "END " << name << "\n";
 // }
 
