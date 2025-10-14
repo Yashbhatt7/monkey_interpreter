@@ -1,3 +1,4 @@
+#include<sstream>
 #include "object.hpp"
 #include "ast.hpp"
 
@@ -120,5 +121,58 @@ std::string Array::Inspect() const {
     out += "]";
 
     return out;
+}
+
+// FNV-1a hash function
+uint64_t fnv1a_hash(const std::string& str) {
+    uint64_t hash = 14695981039346656037ULL; // FNV offset basis
+
+    for (char c : str) {
+        hash ^= static_cast<uint64_t>(c);
+        hash *= 1099511628211ULL; // FNV prime
+    }
+
+    return hash;
+}
+
+// HashKey methods for Integer, String, Boolean
+HashKey Integer::HashKey_() const {
+    return {Type(), static_cast<uint64_t>(Value)};
+}
+
+HashKey String::HashKey_() const {
+    return {Type(), fnv1a_hash(Value)};
+}
+
+HashKey Boolean::HashKey_() const {
+    uint64_t value = Value ? 1 : 0;
+    return {Type(), value};
+}
+
+// Hash implementation
+Hash::Hash(std::unordered_map<struct HashKey, HashPair> pairs) : Pairs(std::move(pairs)) {}
+
+ObjectType Hash::Type() const {
+    return HASH_OBJ;
+}
+
+std::string Hash::Inspect() const {
+    std::ostringstream out;
+    std::vector<std::string> pairs;
+
+    for (const auto& pair : Pairs) {
+        pairs.push_back(pair.second.Key->Inspect() + ": " + pair.second.Value->Inspect());
+    }
+
+    out << "{";
+    for (size_t i = 0; i < pairs.size(); ++i) {
+        if (i > 0) {
+            out << ", ";
+        }
+        out << pairs[i];
+    }
+    out << "}";
+
+    return out.str();
 }
 
