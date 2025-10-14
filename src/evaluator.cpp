@@ -242,9 +242,62 @@ std::unique_ptr<Object> evalIdentifier(Identifier* ident, std::shared_ptr<Enviro
                     newElements.push_back(std::make_unique<Boolean>(*boolElem));
                 } else if (auto strElem = dynamic_cast<String*>(elem.get())) {
                     newElements.push_back(std::make_unique<String>(*strElem));
+                } else if (auto hashElem = dynamic_cast<Hash*>(elem.get())) {
+                    std::unordered_map<HashKey, HashPair> newPairs;
+                    for (const auto& [key, pair] : hashElem->Pairs) {
+                        std::unique_ptr<Object> copiedKey;
+                        std::unique_ptr<Object> copiedValue;
+                        // Copy key
+                        if (auto intKey = dynamic_cast<Integer*>(pair.Key.get())) {
+                            copiedKey = std::make_unique<Integer>(*intKey);
+                        } else if (auto boolKey = dynamic_cast<Boolean*>(pair.Key.get())) {
+                            copiedKey = std::make_unique<Boolean>(*boolKey);
+                        } else if (auto strKey = dynamic_cast<String*>(pair.Key.get())) {
+                            copiedKey = std::make_unique<String>(*strKey);
+                        }
+                        // Copy value
+                        if (auto intVal = dynamic_cast<Integer*>(pair.Value.get())) {
+                            copiedValue = std::make_unique<Integer>(*intVal);
+                        } else if (auto boolVal = dynamic_cast<Boolean*>(pair.Value.get())) {
+                            copiedValue = std::make_unique<Boolean>(*boolVal);
+                        } else if (auto strVal = dynamic_cast<String*>(pair.Value.get())) {
+                            copiedValue = std::make_unique<String>(*strVal);
+                        } else if (auto nullVal = dynamic_cast<Null*>(pair.Value.get())) {
+                            copiedValue = std::make_unique<Null>(*nullVal);
+                        }
+
+                        newPairs[key] = HashPair(std::move(copiedKey), std::move(copiedValue));
+                    }
+                    newElements.push_back(std::make_unique<Hash>(std::move(newPairs)));
                 }
             }
             return std::make_unique<Array>(std::move(newElements));
+        } else if (auto hashObj = dynamic_cast<Hash*>(val)) {
+            std::unordered_map<HashKey, HashPair> newPairs;
+            for (const auto& [key, pair] : hashObj->Pairs) {
+                std::unique_ptr<Object> copiedKey;
+                std::unique_ptr<Object> copiedValue;
+                // Copy key
+                if (auto intKey = dynamic_cast<Integer*>(pair.Key.get())) {
+                    copiedKey = std::make_unique<Integer>(*intKey);
+                } else if (auto boolKey = dynamic_cast<Boolean*>(pair.Key.get())) {
+                    copiedKey = std::make_unique<Boolean>(*boolKey);
+                } else if (auto strKey = dynamic_cast<String*>(pair.Key.get())) {
+                    copiedKey = std::make_unique<String>(*strKey);
+                }
+                // Copy value
+                if (auto intVal = dynamic_cast<Integer*>(pair.Value.get())) {
+                    copiedValue = std::make_unique<Integer>(*intVal);
+                } else if (auto boolVal = dynamic_cast<Boolean*>(pair.Value.get())) {
+                    copiedValue = std::make_unique<Boolean>(*boolVal);
+                } else if (auto strVal = dynamic_cast<String*>(pair.Value.get())) {
+                    copiedValue = std::make_unique<String>(*strVal);
+                } else if (auto nullVal = dynamic_cast<Null*>(pair.Value.get())) {
+                    copiedValue = std::make_unique<Null>(*nullVal);
+                }
+                newPairs[key] = HashPair(std::move(copiedKey), std::move(copiedValue));
+            }
+            return std::make_unique<Hash>(std::move(newPairs));
         }
     }
 
@@ -327,6 +380,144 @@ std::unique_ptr<Object> evalArrayIndexExpression(Object* array, Object* index) {
         return std::make_unique<Null>(*nullElem);
     } else if (auto funcElem = dynamic_cast<Function*>(elem)) {
         return std::make_unique<Function>(funcElem->Parameters, funcElem->Body, funcElem->Env);
+    } else if (auto arrayElem = dynamic_cast<Array*>(elem)) {
+        std::vector<std::unique_ptr<Object>> newElements;
+        for (const auto& e : arrayElem->Elements) {
+            if (auto intE = dynamic_cast<Integer*>(e.get())) {
+                newElements.push_back(std::make_unique<Integer>(*intE));
+            } else if (auto boolE = dynamic_cast<Boolean*>(e.get())) {
+                newElements.push_back(std::make_unique<Boolean>(*boolE));
+            } else if (auto strE = dynamic_cast<String*>(e.get())) {
+                newElements.push_back(std::make_unique<String>(*strE));
+            } else if (auto nullE = dynamic_cast<Null*>(e.get())) {
+                newElements.push_back(std::make_unique<Null>(*nullE));
+            }
+        }
+        return std::make_unique<Array>(std::move(newElements));
+    } else if (auto hashElem = dynamic_cast<Hash*>(elem)) {
+        std::unordered_map<HashKey, HashPair> newPairs;
+        for (const auto& [key, pair] : hashElem->Pairs) {
+            std::unique_ptr<Object> copiedKey;
+            std::unique_ptr<Object> copiedValue;
+            // Copy key
+            if (auto intKey = dynamic_cast<Integer*>(pair.Key.get())) {
+                copiedKey = std::make_unique<Integer>(*intKey);
+            } else if (auto boolKey = dynamic_cast<Boolean*>(pair.Key.get())) {
+                copiedKey = std::make_unique<Boolean>(*boolKey);
+            } else if (auto strKey = dynamic_cast<String*>(pair.Key.get())) {
+                copiedKey = std::make_unique<String>(*strKey);
+            }
+            // Copy value
+            if (auto intVal = dynamic_cast<Integer*>(pair.Value.get())) {
+                copiedValue = std::make_unique<Integer>(*intVal);
+            } else if (auto boolVal = dynamic_cast<Boolean*>(pair.Value.get())) {
+                copiedValue = std::make_unique<Boolean>(*boolVal);
+            } else if (auto strVal = dynamic_cast<String*>(pair.Value.get())) {
+                copiedValue = std::make_unique<String>(*strVal);
+            } else if (auto nullVal = dynamic_cast<Null*>(pair.Value.get())) {
+                copiedValue = std::make_unique<Null>(*nullVal);
+            }
+
+            newPairs[key] = HashPair(std::move(copiedKey), std::move(copiedValue));
+        }
+        return std::make_unique<Hash>(std::move(newPairs));
+    }
+    return nativeNullObject();
+}
+
+std::unique_ptr<Object> evalHashLiteral(HashLiteral* node, std::shared_ptr<Environment> env) {
+    std::unordered_map<HashKey, HashPair> pairs;
+
+    for (auto& [keyNode, valueNode] : node->Pairs) {
+        auto key = Eval(keyNode, env);
+        if (isError(key.get())) {
+            return key;
+        }
+
+        auto hashable = dynamic_cast<Hashable*>(key.get());
+        if (!hashable) {
+            return newError("unusable as hash key: {}", key->Type());
+        }
+
+        auto value = Eval(valueNode.get(), env);
+        if (isError(value.get())) {
+            return value;
+        }
+
+        HashKey hashed = hashable->HashKey_();
+        pairs[hashed] = HashPair(std::move(key), std::move(value));
+    }
+
+    return std::make_unique<Hash>(std::move(pairs));
+}
+
+std::unique_ptr<Object> evalHashIndexExpression(Object* hash, Object* index) {
+    auto hashObject = static_cast<Hash*>(hash);
+
+    auto hashable = dynamic_cast<Hashable*>(index);
+    if (!hashable) {
+        return newError("unusable as hash key: {}", index->Type());
+    }
+
+    HashKey key = hashable->HashKey_();
+    auto it = hashObject->Pairs.find(key);
+
+    if (it == hashObject->Pairs.end()) {
+        return nativeNullObject();
+    }
+
+    Object* valuePtr = it->second.Value.get();
+    if (auto intObj = dynamic_cast<Integer*>(valuePtr)) {
+        return std::make_unique<Integer>(*intObj);
+    } else if (auto boolObj = dynamic_cast<Boolean*>(valuePtr)) {
+        return std::make_unique<Boolean>(*boolObj);
+    } else if (auto strObj = dynamic_cast<String*>(valuePtr)) {
+        return std::make_unique<String>(*strObj);
+    } else if (auto nullObj = dynamic_cast<Null*>(valuePtr)) {
+        return std::make_unique<Null>(*nullObj);
+    } else if (auto funcObj = dynamic_cast<Function*>(valuePtr)) {
+        return std::make_unique<Function>(funcObj->Parameters, funcObj->Body, funcObj->Env);
+    } else if (auto arrayObj = dynamic_cast<Array*>(valuePtr)) {
+        std::vector<std::unique_ptr<Object>> newElements;
+        for (const auto& e : arrayObj->Elements) {
+            if (auto intE = dynamic_cast<Integer*>(e.get())) {
+                newElements.push_back(std::make_unique<Integer>(*intE));
+            } else if (auto boolE = dynamic_cast<Boolean*>(e.get())) {
+                newElements.push_back(std::make_unique<Boolean>(*boolE));
+            } else if (auto strE = dynamic_cast<String*>(e.get())) {
+                newElements.push_back(std::make_unique<String>(*strE));
+            } else if (auto nullE = dynamic_cast<Null*>(e.get())) {
+                newElements.push_back(std::make_unique<Null>(*nullE));
+            }
+        }
+        return std::make_unique<Array>(std::move(newElements));
+    } else if (auto hashObj = dynamic_cast<Hash*>(valuePtr)) {
+        std::unordered_map<HashKey, HashPair> newPairs;
+        for (const auto& [k, pair] : hashObj->Pairs) {
+            std::unique_ptr<Object> copiedKey;
+            std::unique_ptr<Object> copiedValue;
+            // Copy key
+            if (auto intKey = dynamic_cast<Integer*>(pair.Key.get())) {
+                copiedKey = std::make_unique<Integer>(*intKey);
+            } else if (auto boolKey = dynamic_cast<Boolean*>(pair.Key.get())) {
+                copiedKey = std::make_unique<Boolean>(*boolKey);
+            } else if (auto strKey = dynamic_cast<String*>(pair.Key.get())) {
+                copiedKey = std::make_unique<String>(*strKey);
+            }
+            // Copy value
+            if (auto intVal = dynamic_cast<Integer*>(pair.Value.get())) {
+                copiedValue = std::make_unique<Integer>(*intVal);
+            } else if (auto boolVal = dynamic_cast<Boolean*>(pair.Value.get())) {
+                copiedValue = std::make_unique<Boolean>(*boolVal);
+            } else if (auto strVal = dynamic_cast<String*>(pair.Value.get())) {
+                copiedValue = std::make_unique<String>(*strVal);
+            } else if (auto nullVal = dynamic_cast<Null*>(pair.Value.get())) {
+                copiedValue = std::make_unique<Null>(*nullVal);
+            }
+
+            newPairs[k] = HashPair(std::move(copiedKey), std::move(copiedValue));
+        }
+        return std::make_unique<Hash>(std::move(newPairs));
     }
 
     return nativeNullObject();
@@ -335,6 +526,8 @@ std::unique_ptr<Object> evalArrayIndexExpression(Object* array, Object* index) {
 std::unique_ptr<Object> evalIndexExpression(Object* left, Object* index) {
     if (left->Type() == "ARRAY" && index->Type() == "INTEGER") {
         return evalArrayIndexExpression(left, index);
+    } else if (left->Type() == HASH_OBJ) {
+        return evalHashIndexExpression(left, index);
     }
 
     return newError("index operator not supported: {}", left->Type().c_str());
@@ -490,6 +683,10 @@ std::unique_ptr<Object> Eval(Node* node, std::shared_ptr<Environment> env) {
             }
 
             return evalIndexExpression(left.get(), index.get());
+        }
+        case NodeType::HASH_LITERAL: {
+            auto hashLit = static_cast<HashLiteral*>(node);
+            return evalHashLiteral(hashLit, env);
         }
     }
 
