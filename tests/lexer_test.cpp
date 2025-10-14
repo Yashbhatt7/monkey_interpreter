@@ -29,6 +29,7 @@ TEST(LexerTest, NextTokenFullTest) {
         "foobar"
         "foo bar"
         [1, 2];
+        {"foo": "bar"}
     )";
 
     Lexer l(input);
@@ -132,6 +133,12 @@ TEST(LexerTest, NextTokenFullTest) {
         {TokenType::Int, "2"},
         {TokenType::RBracket, "]"},
         {TokenType::Semicolon, ";"},
+        // {"foo": "bar"}
+        {TokenType::LSquirly, "{"},
+        {TokenType::String, "foo"},
+        {TokenType::Colon, ":"},
+        {TokenType::String, "bar"},
+        {TokenType::RSquirly, "}"},
         {TokenType::Eof, ""},
     };
 

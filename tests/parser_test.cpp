@@ -864,3 +864,97 @@ TEST(ParserTest, TestParsingIndexExpressions) {
     EXPECT_TRUE(testInfixExpression(indexExp->Index.get(), 1, "+", 1));
 }
 
+TEST(ParserTest, TestParsingHashLiteralsStringKeys) {
+    std::string input = R"({"one": 1, "two": 2, "three": 3})";
+
+    auto l = std::make_unique<Lexer>(input);
+    Parser p(std::move(l));
+    auto program = p.ParseProgram();
+    checkParserErrors(&p);
+
+    ASSERT_EQ(program->Statements.size(), 1);
+
+    auto stmt = dynamic_cast<ExpressionStatement*>(program->Statements[0].get());
+    ASSERT_NE(stmt, nullptr);
+
+    auto hash = dynamic_cast<HashLiteral*>(stmt->ExpressionPtr.get());
+    ASSERT_NE(hash, nullptr)
+        << "exp is not HashLiteral. got=" << typeid(*stmt->ExpressionPtr.get()).name();
+
+    ASSERT_EQ(hash->Pairs.size(), 3)
+        << "hash.Pairs has wrong length. got=" << hash->Pairs.size();
+
+    std::unordered_map<std::string, int64_t> expected = {
+        {"one", 1},
+        {"two", 2},
+        {"three", 3}
+    };
+
+    for (const auto& pair : hash->Pairs) {
+        auto literal = dynamic_cast<StringLiteral*>(pair.first);
+        ASSERT_NE(literal, nullptr)
+            << "key is not StringLiteral. got=" << typeid(*pair.first).name();
+
+        int64_t expectedValue = expected[literal->String()];
+        EXPECT_TRUE(testIntegerLiteral(pair.second.get(), expectedValue));
+    }
+}
+
+TEST(ParserTest, TestParsingEmptyHashLiteral) {
+    std::string input = "{}";
+
+    auto l = std::make_unique<Lexer>(input);
+    Parser p(std::move(l));
+    auto program = p.ParseProgram();
+    checkParserErrors(&p);
+
+    auto stmt = dynamic_cast<ExpressionStatement*>(program->Statements[0].get());
+    ASSERT_NE(stmt, nullptr);
+
+    auto hash = dynamic_cast<HashLiteral*>(stmt->ExpressionPtr.get());
+    ASSERT_NE(hash, nullptr)
+        << "exp is not HashLiteral. got=" << typeid(*stmt->ExpressionPtr.get()).name();
+
+    EXPECT_EQ(hash->Pairs.size(), 0)
+        << "hash.Pairs has wrong length. got=" << hash->Pairs.size();
+}
+
+TEST(ParserTest, TestParsingHashLiteralsWithExpressions) {
+    std::string input = R"({"one": 0 + 1, "two": 10 - 8, "three": 15 / 5})";
+
+    auto l = std::make_unique<Lexer>(input);
+    Parser p(std::move(l));
+    auto program = p.ParseProgram();
+    checkParserErrors(&p);
+
+    auto stmt = dynamic_cast<ExpressionStatement*>(program->Statements[0].get());
+    ASSERT_NE(stmt, nullptr);
+
+    auto hash = dynamic_cast<HashLiteral*>(stmt->ExpressionPtr.get());
+    ASSERT_NE(hash, nullptr);
+
+    ASSERT_EQ(hash->Pairs.size(), 3);
+
+    std::unordered_map<std::string, std::function<void(Expression*)>> tests = {
+        {"one", [](Expression* e) {
+            EXPECT_TRUE(testInfixExpression(e, int64_t(0), "+", int64_t(1)));
+        }},
+
+        {"two", [](Expression* e) {
+            EXPECT_TRUE(testInfixExpression(e, int64_t(10), "-", int64_t(8)));
+        }},
+
+        {"three", [](Expression* e) {
+            EXPECT_TRUE(testInfixExpression(e, int64_t(15), "/", int64_t(5)));
+        }}
+    };
+
+    for (const auto& pair : hash->Pairs) {
+        auto literal = dynamic_cast<StringLiteral*>(pair.first);
+        ASSERT_NE(literal, nullptr);
+
+        auto testFunc = tests[literal->String()];
+        testFunc(pair.second.get());
+    }
+}
+
