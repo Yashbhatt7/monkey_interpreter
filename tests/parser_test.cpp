@@ -208,8 +208,6 @@ TEST(ParserTest, TestLetStatement) {
         ASSERT_NE(stmt, nullptr)
             << "Statement is null";
 
-        std::cout << "Statement type: " << typeid(*stmt).name() << std::endl;
-
         auto letStmt = dynamic_cast<LetStatement*>(stmt);
         if (letStmt == nullptr) {
             FAIL() << "Failed to cast to LetStatement. Actual type: " << typeid(*stmt).name();
@@ -497,6 +495,14 @@ TEST(ParserTest, TestOperatorPrecedenceParsing) {
         {
             "add(a + b + c * d / f + g)",
             "add((((a + b) + ((c * d) / f)) + g))",
+        },
+        {
+            "a * [1, 2, 3, 4][b * c] * d",
+            "((a * ([1, 2, 3, 4][(b * c)])) * d)",
+        },
+        {
+            "add(a * b[2], b[1], 2 * [1, 2][1])",
+            "add((a * (b[2])), (b[1]), (2 * ([1, 2][1])))",
         },
     };
 
@@ -806,5 +812,55 @@ TEST(ParserTest, TestStringLiteralExpression) {
 
     EXPECT_EQ(literal->Value, "hello world")
         << "literal.Value not 'hello world'. got=" << literal->Value;
+}
+
+TEST(ParserTest, TestParsingArrayLiterals) {
+    std::string input = "[1, 2 * 2, 3 + 3]";
+
+    auto l = std::make_unique<Lexer>(input);
+    Parser p(std::move(l));
+    auto program = p.ParseProgram();
+    checkParserErrors(&p);
+
+    ASSERT_EQ(program->Statements.size(), 1)
+        << "program has not enough statements. got=" << program->Statements.size();
+
+    auto stmt = dynamic_cast<ExpressionStatement*>(program->Statements[0].get());
+    ASSERT_NE(stmt, nullptr)
+        << "program.Statements[0] is not ExpressionStatement.";
+
+    auto array = dynamic_cast<ArrayLiteral*>(stmt->ExpressionPtr.get());
+    ASSERT_NE(array, nullptr)
+        << "exp not ArrayLiteral. got=" << typeid(*stmt->ExpressionPtr.get()).name();
+
+    ASSERT_EQ(array->Elements.size(), 3)
+        << "len(array.Elements) not 3. got=" << array->Elements.size();
+
+    EXPECT_TRUE(testIntegerLiteral(array->Elements[0].get(), 1));
+    EXPECT_TRUE(testInfixExpression(array->Elements[1].get(), 2, "*", 2));
+    EXPECT_TRUE(testInfixExpression(array->Elements[2].get(), 3, "+", 3));
+}
+
+TEST(ParserTest, TestParsingIndexExpressions) {
+    std::string input = "myArray[1 + 1]";
+
+    auto l = std::make_unique<Lexer>(input);
+    Parser p(std::move(l));
+    auto program = p.ParseProgram();
+    checkParserErrors(&p);
+
+    ASSERT_EQ(program->Statements.size(), 1)
+        << "program has not enough statements. got=" << program->Statements.size();
+
+    auto stmt = dynamic_cast<ExpressionStatement*>(program->Statements[0].get());
+    ASSERT_NE(stmt, nullptr)
+        << "program.Statements[0] is not ExpressionStatement.";
+
+    auto indexExp = dynamic_cast<IndexExpression*>(stmt->ExpressionPtr.get());
+    ASSERT_NE(indexExp, nullptr)
+        << "exp not IndexExpression. got=" << typeid(*stmt->ExpressionPtr.get()).name();
+
+    EXPECT_TRUE(testIdentifier(indexExp->Left.get(), "myArray"));
+    EXPECT_TRUE(testInfixExpression(indexExp->Index.get(), 1, "+", 1));
 }
 
