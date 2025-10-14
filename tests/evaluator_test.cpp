@@ -374,15 +374,28 @@ TEST(EvaluatorTest, TestStringConcatenation) {
 TEST(EvaluatorTest, TestBuiltinFunctions) {
     struct TestCase {
         std::string input;
-        std::variant<int64_t, std::string> expected;
+        std::variant<int64_t, std::string, std::vector<int64_t>, std::nullptr_t> expected;
     };
 
     std::vector<TestCase> tests = {
         {R"(len(""))", int64_t(0)},
         {R"(len("four"))", int64_t(4)},
         {R"(len("hello world"))", int64_t(11)},
-        {R"(len(1))", std::string("argument to 'len' not supported, got INTEGER")},
+        {R"(len(1))", std::string("argument to `len` not supported, got INTEGER")},
         {R"(len("one", "two"))", std::string("wrong number of arguments. got=2, want=1")},
+        {R"(len([1, 2, 3]))", int64_t(3)},
+        {R"(len([]))", int64_t(0)},
+        {R"(puts("hello", "world!"))", std::nullptr_t{}},
+        {R"(first([1, 2, 3]))", int64_t(1)},
+        {R"(first([]))", nullptr},
+        {R"(first(1))", std::string("argument to `first` must be ARRAY, got INTEGER")},
+        {R"(last([1, 2, 3]))", int64_t(3)},
+        {R"(last([]))", nullptr},
+        {R"(last(1))", std::string("argument to `last` must be ARRAY, got INTEGER")},
+        {R"(rest([1, 2, 3]))", std::vector<int64_t>{2, 3}},
+        {R"(rest([]))", nullptr},
+        {R"(push([], 1))", std::vector<int64_t>{1}},
+        {R"(push(1, 1))", std::string("argument to `push` must be ARRAY, got INTEGER")},
     };
 
     initBuiltins();
@@ -390,19 +403,87 @@ TEST(EvaluatorTest, TestBuiltinFunctions) {
     for (const auto& tt : tests) {
         auto evaluated = testEval(tt.input);
 
-        if (std::holds_alternative<int64_t>(tt.expected)) {
-            int64_t expectedInt = std::get<int64_t>(tt.expected);
-            ASSERT_TRUE(testIntegerObject(evaluated.get(), expectedInt))
+        std::visit([&](auto&& expected) {
+            using T = std::decay_t<decltype(expected)>;
+
+            if constexpr (std::is_same_v<T, int64_t>) {
+                ASSERT_TRUE(testIntegerObject(evaluated.get(), expected))
+                    << "Failed for input: " << tt.input;
+
+            } else if constexpr (std::is_same_v<T, std::nullptr_t>) {
+                ASSERT_TRUE(testNullObject(evaluated.get()))
+                    << "Expected NULL for input: " << tt.input;
+
+            } else if constexpr (std::is_same_v<T, std::string>) {
+                auto errObj = dynamic_cast<Error*>(evaluated.get());
+                ASSERT_NE(errObj, nullptr)
+                    << "object is not Error. got=" << evaluated->Type()
+                    << " for input: " << tt.input;
+                EXPECT_EQ(errObj->Message, expected)
+                    << "wrong error message for input: " << tt.input;
+
+            } else if constexpr (std::is_same_v<T, std::vector<int64_t>>) {
+                auto array = dynamic_cast<Array*>(evaluated.get());
+                ASSERT_NE(array, nullptr)
+                    << "object is not Array. got=" << evaluated->Type()
+                    << " for input: " << tt.input;
+                ASSERT_EQ(array->Elements.size(), expected.size())
+                    << "wrong number of elements for input: " << tt.input;
+                for (size_t i = 0; i < expected.size(); ++i) {
+                    EXPECT_TRUE(testIntegerObject(array->Elements[i].get(), expected[i]))
+                        << "array element " << i << " incorrect for input: " << tt.input;
+                }
+            }
+        }, tt.expected);
+    }
+}
+
+TEST(EvaluatorTest, TestArrayLiterals) {
+    std::string input = "[1, 2 * 2, 3 + 3]";
+
+    auto evaluated = testEval(input);
+
+    auto result = dynamic_cast<Array*>(evaluated.get());
+    ASSERT_NE(result, nullptr)
+        << "object is not Array. got=" << typeid(*evaluated.get()).name();
+
+    ASSERT_EQ(result->Elements.size(), 3)
+        << "array has wrong num of elements. got=" << result->Elements.size();
+
+    EXPECT_TRUE(testIntegerObject(result->Elements[0].get(), 1));
+    EXPECT_TRUE(testIntegerObject(result->Elements[1].get(), 4));
+    EXPECT_TRUE(testIntegerObject(result->Elements[2].get(), 6));
+}
+
+TEST(EvaluatorTest, TestArrayIndexExpressions) {
+    struct TestCase {
+        std::string input;
+        std::optional<int64_t> expected;
+    };
+
+    std::vector<TestCase> tests = {
+        {"[1, 2, 3][0]", 1},
+        {"[1, 2, 3][1]", 2},
+        {"[1, 2, 3][2]", 3},
+        {"let i = 0; [1][i];", 1},
+        {"[1, 2, 3][1 + 1];", 3},
+        {"let myArray = [1, 2, 3]; myArray[2];", 3},
+        {"let myArray = [1, 2, 3]; myArray[0] + myArray[1] + myArray[2];", 6},
+        {"let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i]", 2},
+        {"[1, 2, 3][3]", std::nullopt},
+        {"[1, 2, 3][-1]", std::nullopt},
+    };
+
+    for (const auto& tt : tests) {
+        auto evaluated = testEval(tt.input);
+
+        if (tt.expected.has_value()) {
+            EXPECT_TRUE(testIntegerObject(evaluated.get(), tt.expected.value()))
                 << "Failed for input: " << tt.input;
         } else {
-            std::string expectedStr = std::get<std::string>(tt.expected);
-            auto errObj = dynamic_cast<Error*>(evaluated.get());
-            ASSERT_NE(errObj, nullptr)
-                << "object is not Error. got=" << typeid(*evaluated.get()).name()
+            EXPECT_TRUE(testNullObject(evaluated.get()))
+                << "Expected null but got: " << evaluated->Inspect()
                 << " for input: " << tt.input;
-
-            EXPECT_EQ(errObj->Message, expectedStr)
-                << "wrong error message for input: " << tt.input;
         }
     }
 }
