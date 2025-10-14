@@ -27,6 +27,7 @@ enum class TokenType {
 
     // Delimiters
     Comma,
+    Colon,
     Semicolon,
     LParen,
     RParen,
@@ -73,6 +74,7 @@ public:
             {TokenType::Eq, "=="},
             {TokenType::NotEq, "!="},
             {TokenType::Comma, ","},
+            {TokenType::Colon, ":"},
             {TokenType::Semicolon, ";"},
             {TokenType::LParen, "("},
             {TokenType::RParen, ")"},
