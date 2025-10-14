@@ -4,6 +4,7 @@
 #include<string>
 #include<vector>
 #include<memory>
+#include<map>
 #include "token.hpp"
 
 enum class NodeType {
@@ -23,6 +24,7 @@ enum class NodeType {
     CALL_EXPRESSION,
     ARRAY_LITERAL,
     INDEX_EXPRESSION,
+    HASH_LITERAL,
 };
 
 // Base Node interface
@@ -235,6 +237,17 @@ public:
     std::string TokenLiteral() const override;
     std::string String() const override;
     NodeType Type() const override { return NodeType::INDEX_EXPRESSION; }
+};
+
+class HashLiteral : public Expression {
+public:
+    Token token;
+    std::unordered_map<Expression*, std::unique_ptr<Expression>> Pairs;
+
+    void expressionNode() override {}
+    std::string TokenLiteral() const override;
+    std::string String() const override;
+    NodeType Type() const override { return NodeType::HASH_LITERAL; };
 };
 
 #endif // AST_HPP

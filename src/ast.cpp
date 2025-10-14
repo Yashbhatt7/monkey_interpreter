@@ -70,6 +70,10 @@ std::string IndexExpression::TokenLiteral() const {
     return token.literal;
 }
 
+std::string HashLiteral::TokenLiteral() const {
+    return token.literal;
+}
+
 std::string Program::String() const {
     std::ostringstream out;
     for (const auto& s : Statements) {
@@ -257,6 +261,26 @@ std::string IndexExpression::String() const {
     out << "[";
     out << Index->String();
     out << "])";
+
+    return out.str();
+}
+
+std::string HashLiteral::String() const {
+    std::ostringstream out;
+    std::vector<std::string> pairs;
+
+    for (const auto& pair : Pairs) {
+        pairs.push_back(pair.first->String() + ":" + pair.second->String());
+    }
+
+    out << "{";
+    for (size_t i = 0; i < pairs.size(); ++i) {
+        if (i > 0) {
+            out << ", ";
+        }
+        out << pairs[i];
+    }
+    out << "}";
 
     return out.str();
 }
