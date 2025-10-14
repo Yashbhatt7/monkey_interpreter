@@ -21,6 +21,7 @@ inline const ObjectType RETURN_VALUE_OBJ  = "RETURN_VALUE";
 inline const ObjectType ERROR_OBJ = "ERROR";
 inline const ObjectType FUNCTION_OBJ = "FUNCTION";
 inline const ObjectType BUILTIN_OBJ = "BUILTIN";
+inline const ObjectType ARRAY_OBJ = "ARRAY";
 
 class Object {
 public:
@@ -101,7 +102,17 @@ public:
 
     Builtin(BuiltinFunction fn);
     ObjectType Type() const override;
-    ObjectType Inspect() const override;
+    std::string Inspect() const override;
+};
+
+class Array : public Object {
+public:
+    std::vector<std::unique_ptr<Object>> Elements;
+
+    Array() = default;
+    Array(std::vector<std::unique_ptr<Object>> elements);
+    ObjectType Type() const override;
+    std::string Inspect() const override;
 };
 
 #endif // OBJECT_HPP

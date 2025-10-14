@@ -86,7 +86,7 @@ ObjectType String::Type() const {
     return STRING_OBJ;
 }
 
-ObjectType String::Inspect() const {
+std::string String::Inspect() const {
     return Value;
 }
 
@@ -97,7 +97,28 @@ ObjectType Builtin::Type() const {
     return BUILTIN_OBJ;
 }
 
-ObjectType Builtin::Inspect() const {
+std::string Builtin::Inspect() const {
     return "builtin function";
+}
+
+// Array implementation
+Array::Array(std::vector<std::unique_ptr<Object>> elements) : Elements(std::move(elements)) {}
+
+ObjectType Array::Type() const {
+    return ARRAY_OBJ;
+}
+
+std::string Array::Inspect() const {
+    std::string out = "[";
+
+    for (size_t i = 0; i < Elements.size(); ++i) {
+        out += Elements[i]->Inspect();
+        if (i < Elements.size() - 1) {
+            out += ", ";
+        }
+    }
+    out += "]";
+
+    return out;
 }
 
