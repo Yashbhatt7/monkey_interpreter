@@ -22,5 +22,5 @@ public:
 std::shared_ptr<Environment> NewEnvironment();
 std::shared_ptr<Environment> NewEnclosedEnvironment(std::shared_ptr<Environment> outer);
 
-#endif
+#endif // ENVIRONMENT_HPP
 

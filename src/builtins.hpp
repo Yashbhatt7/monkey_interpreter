@@ -12,5 +12,5 @@ void initBuiltins();
 
 Builtin* getBuiltin(const std::string& name);
 
-#endif
+#endif // BUILTIN_HPP
 

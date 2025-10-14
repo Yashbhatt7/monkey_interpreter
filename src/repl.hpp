@@ -8,6 +8,5 @@
 void Start(std::istream& in, std::ostream& out);
 void printParserErrors(std::ostream& out, const std::vector<std::string>& errors);
 
-#endif
-
+#endif // REPL_HPP
 
