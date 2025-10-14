@@ -66,6 +66,8 @@ Token Lexer::NextToken() {
         }
         case ',':
             tok = newToken(TokenType::Comma, ch); break;
+        case ':':
+            tok = newToken(TokenType::Colon, ch); break;
         case 0:
             tok = Token{TokenType::Eof, ""}; break;
         default: {
