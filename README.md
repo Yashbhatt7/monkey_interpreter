@@ -2,7 +2,7 @@
 
 A tree-walking interpreter for the Monkey programming language, implemented in C++.
 
-## 📚 About
+## About
 
 This project is a complete implementation of the Monkey programming language interpreter, following the book [**Writing An Interpreter In Go**](https://interpreterbook.com/) by Thorsten Ball. While the original book uses Go, this implementation is written in **C++17** with modern practices and memory management.
 
